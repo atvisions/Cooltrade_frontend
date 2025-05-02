@@ -180,13 +180,13 @@
               <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
                 <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
                   RSI (14)
-                  <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.RSI"></i>
+                  <el-tooltip :content="indicatorExplanations.RSI" placement="top">
+                    <i class="ri-question-line cursor-help"></i>
+                  </el-tooltip>
                 </div>
                 <div class="flex items-center justify-between">
                   <span class="font-medium">{{ analysisData.indicators_analysis.RSI.value }}</span>
-                  <span :class="getIndicatorClass(analysisData.indicators_analysis.RSI.support_trend)" class="text-xs">
-                    {{ getIndicatorText(analysisData.indicators_analysis.RSI.support_trend) }}
-                  </span>
+                  <span :class="getIndicatorClass(analysisData.indicators_analysis.RSI.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.RSI.support_trend)"></span>
                 </div>
               </div>
 
@@ -194,13 +194,13 @@
               <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
               <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
                 BIAS
-                <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.BIAS"></i>
+                <el-tooltip :content="indicatorExplanations.BIAS" placement="top">
+                  <i class="ri-question-line cursor-help"></i>
+                </el-tooltip>
               </div>
               <div class="flex items-center justify-between">
                 <span class="font-medium">{{ analysisData.indicators_analysis.BIAS.value }}</span>
-                <span :class="getIndicatorClass(analysisData.indicators_analysis.BIAS.support_trend)" class="text-xs">
-                  {{ getIndicatorText(analysisData.indicators_analysis.BIAS.support_trend) }}
-                </span>
+                <span :class="getIndicatorClass(analysisData.indicators_analysis.BIAS.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.BIAS.support_trend)"></span>
               </div>
             </div>
 
@@ -208,13 +208,13 @@
             <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
               <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
                 PSY
-                <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.PSY"></i>
+                <el-tooltip :content="indicatorExplanations.PSY" placement="top">
+                  <i class="ri-question-line cursor-help"></i>
+                </el-tooltip>
               </div>
               <div class="flex items-center justify-between">
                 <span class="font-medium">{{ analysisData.indicators_analysis.PSY.value }}</span>
-                <span :class="getIndicatorClass(analysisData.indicators_analysis.PSY.support_trend)" class="text-xs">
-                  {{ getIndicatorText(analysisData.indicators_analysis.PSY.support_trend) }}
-                </span>
+                <span :class="getIndicatorClass(analysisData.indicators_analysis.PSY.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.PSY.support_trend)"></span>
               </div>
             </div>
 
@@ -222,13 +222,13 @@
             <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
               <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
                 VWAP
-                <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.VWAP"></i>
+                <el-tooltip :content="indicatorExplanations.VWAP" placement="top">
+                  <i class="ri-question-line cursor-help"></i>
+                </el-tooltip>
               </div>
               <div class="flex items-center justify-between">
                 <span class="font-medium">{{ analysisData.indicators_analysis.VWAP.value.toFixed(2) }}</span>
-                <span :class="getIndicatorClass(analysisData.indicators_analysis.VWAP.support_trend)" class="text-xs">
-                  {{ getIndicatorText(analysisData.indicators_analysis.VWAP.support_trend) }}
-                </span>
+                <span :class="getIndicatorClass(analysisData.indicators_analysis.VWAP.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.VWAP.support_trend)"></span>
               </div>
             </div>
 
@@ -236,13 +236,13 @@
             <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
               <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
                 Funding Rate
-                <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.FundingRate"></i>
+                <el-tooltip :content="indicatorExplanations.FundingRate" placement="top">
+                  <i class="ri-question-line cursor-help"></i>
+                </el-tooltip>
               </div>
               <div class="flex items-center justify-between">
                 <span class="font-medium">{{ (analysisData.indicators_analysis.FundingRate.value * 100).toFixed(4) }}%</span>
-                <span :class="getIndicatorClass(analysisData.indicators_analysis.FundingRate.support_trend)" class="text-xs">
-                  {{ getIndicatorText(analysisData.indicators_analysis.FundingRate.support_trend) }}
-                </span>
+                <span :class="getIndicatorClass(analysisData.indicators_analysis.FundingRate.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.FundingRate.support_trend)"></span>
               </div>
             </div>
 
@@ -250,13 +250,13 @@
             <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
               <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
                 Exchange Netflow
-                <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.ExchangeNetflow"></i>
+                <el-tooltip :content="indicatorExplanations.ExchangeNetflow" placement="top">
+                  <i class="ri-question-line cursor-help"></i>
+                </el-tooltip>
               </div>
               <div class="flex items-center justify-between">
                 <span class="font-medium">{{ analysisData.indicators_analysis.ExchangeNetflow.value.toFixed(2) }}</span>
-                <span :class="getIndicatorClass(analysisData.indicators_analysis.ExchangeNetflow.support_trend)" class="text-xs">
-                  {{ getIndicatorText(analysisData.indicators_analysis.ExchangeNetflow.support_trend) }}
-                </span>
+                <span :class="getIndicatorClass(analysisData.indicators_analysis.ExchangeNetflow.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.ExchangeNetflow.support_trend)"></span>
               </div>
             </div>
 
@@ -264,13 +264,13 @@
             <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
               <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
                 NUPL
-                <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.NUPL"></i>
+                <el-tooltip :content="indicatorExplanations.NUPL" placement="top">
+                  <i class="ri-question-line cursor-help"></i>
+                </el-tooltip>
               </div>
               <div class="flex items-center justify-between">
                 <span class="font-medium">{{ analysisData.indicators_analysis.NUPL.value.toFixed(2) }}</span>
-                <span :class="getIndicatorClass(analysisData.indicators_analysis.NUPL.support_trend)" class="text-xs">
-                  {{ getIndicatorText(analysisData.indicators_analysis.NUPL.support_trend) }}
-                </span>
+                <span :class="getIndicatorClass(analysisData.indicators_analysis.NUPL.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.NUPL.support_trend)"></span>
               </div>
             </div>
 
@@ -278,13 +278,13 @@
             <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
               <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
                 Mayer Multiple
-                <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.MayerMultiple"></i>
+                <el-tooltip :content="indicatorExplanations.MayerMultiple" placement="top">
+                  <i class="ri-question-line cursor-help"></i>
+                </el-tooltip>
               </div>
               <div class="flex items-center justify-between">
                 <span class="font-medium">{{ analysisData.indicators_analysis.MayerMultiple.value.toFixed(2) }}</span>
-                <span :class="getIndicatorClass(analysisData.indicators_analysis.MayerMultiple.support_trend)" class="text-xs">
-                  {{ getIndicatorText(analysisData.indicators_analysis.MayerMultiple.support_trend) }}
-                </span>
+                <span :class="getIndicatorClass(analysisData.indicators_analysis.MayerMultiple.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.MayerMultiple.support_trend)"></span>
               </div>
             </div>
             </div>
@@ -294,11 +294,11 @@
               <div class="flex items-center justify-between mb-2">
                 <div class="text-sm text-gray-400 flex items-center gap-1">
                   MACD
-                  <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.MACD"></i>
+                  <el-tooltip :content="indicatorExplanations.MACD" placement="top">
+                    <i class="ri-question-line cursor-help"></i>
+                  </el-tooltip>
                 </div>
-                <span :class="getIndicatorClass(analysisData.indicators_analysis.MACD.support_trend)" class="text-xs">
-                  {{ getIndicatorText(analysisData.indicators_analysis.MACD.support_trend) }}
-                </span>
+                <span :class="getIndicatorClass(analysisData.indicators_analysis.MACD.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.MACD.support_trend)"></span>
               </div>
               <div class="grid grid-cols-3 gap-2">
                 <div class="text-center p-1 rounded bg-blue-900/20 border border-blue-800/30">
@@ -321,11 +321,11 @@
               <div class="flex items-center justify-between mb-2">
                 <div class="text-sm text-gray-400 flex items-center gap-1">
                   Bollinger Bands
-                  <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.BollingerBands"></i>
+                  <el-tooltip :content="indicatorExplanations.BollingerBands" placement="top">
+                    <i class="ri-question-line cursor-help"></i>
+                  </el-tooltip>
                 </div>
-                <span :class="getIndicatorClass(analysisData.indicators_analysis.BollingerBands.support_trend)" class="text-xs">
-                  {{ getIndicatorText(analysisData.indicators_analysis.BollingerBands.support_trend) }}
-                </span>
+                <span :class="getIndicatorClass(analysisData.indicators_analysis.BollingerBands.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.BollingerBands.support_trend)"></span>
               </div>
               <div class="grid grid-cols-3 gap-2">
                 <div class="text-center p-1 rounded bg-red-900/20 border border-red-800/30">
@@ -348,11 +348,11 @@
               <div class="flex items-center justify-between mb-2">
                 <div class="text-sm text-gray-400 flex items-center gap-1">
                   DMI
-                  <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.DMI"></i>
+                  <el-tooltip :content="indicatorExplanations.DMI" placement="top">
+                    <i class="ri-question-line cursor-help"></i>
+                  </el-tooltip>
                 </div>
-                <span :class="getIndicatorClass(analysisData.indicators_analysis.DMI.support_trend)" class="text-xs">
-                  {{ getIndicatorText(analysisData.indicators_analysis.DMI.support_trend) }}
-                </span>
+                <span :class="getIndicatorClass(analysisData.indicators_analysis.DMI.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.DMI.support_trend)"></span>
               </div>
               <div class="grid grid-cols-3 gap-2">
                 <div class="text-center p-1 rounded bg-green-900/20 border border-green-800/30">
@@ -493,6 +493,7 @@ import html2canvas from 'html2canvas'
 // eslint-disable-next-line
 declare module 'qrcode';
 import QRCode from 'qrcode'
+import { ElTooltip } from 'element-plus'
 
 import { getTechnicalAnalysis } from '@/api'
 import { parseSymbolFromUrl } from '@/utils/trading'
@@ -525,17 +526,17 @@ let refreshTimer: ReturnType<typeof setInterval> | null = null
 
 // 指标英文名与说明映射
 const indicatorExplanations: Record<string, string> = {
-  RSI: 'Relative Strength Index, measures price momentum and overbought/oversold conditions.',
-  BIAS: 'Bias, measures the deviation of price from its moving average.',
-  PSY: 'Psychological Line, reflects market participants\' sentiment.',
-  VWAP: 'Volume Weighted Average Price, reflects the true trading value.',
-  FundingRate: 'Funding Rate, reflects the balance of long and short forces in perpetual contracts.',
-  ExchangeNetflow: 'Exchange Netflow, shows the net inflow/outflow of funds on exchanges.',
-  NUPL: 'Net Unrealized Profit/Loss, reflects the overall profit/loss status of the market.',
-  MayerMultiple: 'Mayer Multiple, ratio of current price to 200-day moving average.',
-  MACD: 'Moving Average Convergence Divergence, used to judge trend strength and possible turning points.',
-  BollingerBands: 'Bollinger Bands, measures price volatility and possible support/resistance.',
-  DMI: 'Directional Movement Index, used to judge trend direction and strength.'
+  RSI: '相对强弱指数（RSI），用于衡量价格动量和超买超卖状态。',
+  BIAS: '乖离率，衡量价格偏离均线的程度。',
+  PSY: '心理线指标，反映市场参与者的心理变化。',
+  VWAP: '成交量加权平均价，反映市场真实交易价值。',
+  FundingRate: '资金费率，反映合约市场多空力量对比。',
+  ExchangeNetflow: '交易所净流入，反映资金流向。',
+  NUPL: '未实现净盈亏比率，反映市场整体盈亏状况。',
+  MayerMultiple: '梅耶倍数，当前价格与200日均线的比值。',
+  MACD: '移动平均线收敛散度，用于判断趋势强弱和转折点。',
+  BollingerBands: '布林带，用于衡量价格波动性和支撑阻力位。',
+  DMI: '动向指标，用于判断趋势方向和强度。'
 }
 
 // 格式化价格显示
@@ -765,14 +766,6 @@ const formatPercent = (value?: number | string | null) => {
   return `${Math.round(numValue * 100)}%`
 }
 
-// 获取指标趋势文本
-const getIndicatorText = (trend?: string) => {
-  if (!trend) return '--'
-  if (trend === 'bullish' || trend === '看涨') return '看涨'
-  if (trend === 'bearish' || trend === '看跌') return '看跌'
-  if (trend === 'neutral' || trend === '中性') return '中性'
-  return trend
-}
 
 // 获取指标趋势样式
 const getIndicatorClass = (trend?: string) => {
@@ -781,6 +774,44 @@ const getIndicatorClass = (trend?: string) => {
   if (trend === 'bearish' || trend === '看跌' || trend === '不支持当前趋势') return 'text-red-400'
   if (trend === 'neutral' || trend === '中性') return 'text-yellow-400'
   return 'text-gray-400'
+}
+
+// 新增：趋势图标渲染函数（圆形底色+小尺寸+带尾巴箭头）
+const getIndicatorIcon = (trend?: string) => {
+  if (trend === 'bullish' || trend === '看涨' || trend === '支持当前趋势') {
+    return `<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:rgba(16,185,129,0.12);">
+      <i class='ri-arrow-up-line' style='font-size:14px;color:#22c55e;'></i>
+    </span>`;
+  }
+  if (trend === 'bearish' || trend === '看跌' || trend === '反对当前趋势') {
+    return `<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:rgba(239,68,68,0.12);">
+      <i class='ri-arrow-down-line' style='font-size:14px;color:#ef4444;'></i>
+    </span>`;
+  }
+  // 中性
+  return `<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:rgba(156,163,175,0.12);">
+    <i class='ri-subtract-line' style='font-size:14px;color:#9ca3af;'></i>
+  </span>`;
+}
+
+// 保存图片时的趋势图标渲染（与页面一致，Remix Icon + 圆形底色，垂直居中，微调）
+const getIndicatorIconForImage = (trend?: string) => {
+  const baseStyle = "display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;";
+  const iconStyle = "font-size:14px;line-height:1;height:14px;vertical-align:middle;display:block;margin-top:-14px;";
+  if (trend === 'bullish' || trend === '看涨' || trend === '支持当前趋势') {
+    return `<span style="${baseStyle}background:rgba(16,185,129,0.12);">
+      <i class='ri-arrow-up-line' style='${iconStyle}color:#22c55e;'></i>
+    </span>`;
+  }
+  if (trend === 'bearish' || trend === '看跌' || trend === '反对当前趋势') {
+    return `<span style="${baseStyle}background:rgba(239,68,68,0.12);">
+      <i class='ri-arrow-down-line' style='${iconStyle}color:#ef4444;'></i>
+    </span>`;
+  }
+  // 中性
+  return `<span style="${baseStyle}background:rgba(156,163,175,0.12);">
+    <i class='ri-subtract-line' style='${iconStyle}color:#9ca3af;'></i>
+  </span>`;
 }
 
 // 模拟真实刷新进度
@@ -1116,9 +1147,7 @@ const shareToTwitter = () => {
     upProb = typeof upProb === 'number' && upProb >= 0 && upProb <= 1 ? upProb : 0.33
     downProb = typeof downProb === 'number' && downProb >= 0 && downProb <= 1 ? downProb : 0.33
 
-    // 转换为百分比
-    const upProbPercent = Math.round(upProb * 100)
-    const downProbPercent = Math.round(downProb * 100)
+
 
     // 获取趋势分析摘要
     const trendSummary = analysisData.value?.trend_analysis?.summary || '无趋势分析'
@@ -1238,7 +1267,21 @@ const saveChartImage = async () => {
       trendSection.style.boxShadow = '0 1px 4px 0 #0001'
       trendSection.innerHTML = `
         <div style="font-size: 16px; font-weight: 500; margin-bottom: 8px;">Market Trend Analysis</div>
-        <div style="font-size: 14px; color: #d1d5db; line-height: 1.6;">${analysisData.value.trend_analysis.summary}</div>
+        <div style="font-size: 14px; color: #d1d5db; line-height: 1.6; margin-bottom: 12px;">${analysisData.value.trend_analysis.summary}</div>
+        <div style="display: flex; justify-content: center; gap: 8px;">
+          <div style="flex:1; text-align:center; background:rgba(16,185,129,0.12); border-radius:8px; padding:8px 0; border:1px solid #10b98133;">
+            <div style="color:#4ade80; font-size:18px; font-weight:600;">${formatPercent(analysisData.value.trend_analysis.probabilities.up)}</div>
+            <div style="color:#4ade80; font-size:12px;">Up</div>
+          </div>
+          <div style="flex:1; text-align:center; background:rgba(156,163,175,0.12); border-radius:8px; padding:8px 0; border:1px solid #9ca3af33;">
+            <div style="color:#9ca3af; font-size:18px; font-weight:600;">${formatPercent(analysisData.value.trend_analysis.probabilities.sideways)}</div>
+            <div style="color:#9ca3af; font-size:12px;">Sideways</div>
+          </div>
+          <div style="flex:1; text-align:center; background:rgba(239,68,68,0.12); border-radius:8px; padding:8px 0; border:1px solid #ef444433;">
+            <div style="color:#ef4444; font-size:18px; font-weight:600;">${formatPercent(analysisData.value.trend_analysis.probabilities.down)}</div>
+            <div style="color:#ef4444; font-size:12px;">Down</div>
+          </div>
+        </div>
       `
       container.appendChild(trendSection)
     }
@@ -1262,7 +1305,7 @@ const saveChartImage = async () => {
                 <div style="font-size: 12px; color: #9ca3af; margin-bottom: 5px;">${key}</div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <span style="font-size: 14px;">${typeof indicator.value === 'number' ? indicator.value.toFixed(2) : indicator.value}</span>
-                  <span style="font-size: 12px; ${getIndicatorStyle(indicator.support_trend)}">${getIndicatorText(indicator.support_trend)}</span>
+                  <span style="font-size: 12px;">${getIndicatorIconForImage(indicator.support_trend)}</span>
                 </div>
               </div>
             `).join('')}
@@ -1369,14 +1412,6 @@ const saveChartImage = async () => {
   }
 }
 
-// 获取指标样式
-const getIndicatorStyle = (trend?: string) => {
-  if (!trend) return 'color: #9ca3af;'
-  if (trend === 'bullish' || trend === '看涨' || trend === '支持当前趋势') return 'color: #4ade80;'
-  if (trend === 'bearish' || trend === '看跌' || trend === '不支持当前趋势') return 'color: #ef4444;'
-  if (trend === 'neutral' || trend === '中性') return 'color: #fbbf24;'
-  return 'color: #9ca3af;'
-}
 
 </script>
 
