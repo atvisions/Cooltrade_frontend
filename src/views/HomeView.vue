@@ -10,9 +10,10 @@
             <button
               class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-800 transition"
               @click="forceRefreshData"
-              :disabled="loading || showRefreshModal"
+              :disabled="showRefreshModal"
+              :class="{ 'opacity-50 cursor-not-allowed': showRefreshModal }"
             >
-              <i class="ri-refresh-line ri-lg" :class="{ 'animate-spin': loading }"></i>
+              <i class="ri-refresh-line ri-lg" :class="{ 'animate-spin': showRefreshModal }"></i>
             </button>
           </div>
         </div>
@@ -21,12 +22,68 @@
 
     <!-- 主要内容区域 -->
     <main class="absolute inset-0 top-12 bottom-16 overflow-y-auto">
-      <!-- 加载状态 -->
-      <div v-if="loading" class="flex items-center justify-center h-full">
-        <div class="text-center">
-          <div class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-          <p class="text-gray-400">正在加载分析数据...</p>
+      <!-- 整体加载状态 - 只在初始加载时显示 -->
+      <div v-if="loading && !analysisData" class="max-w-[375px] mx-auto px-4 pb-16">
+        <!-- 价格展示卡片骨架屏 -->
+        <div class="mt-6 p-5 rounded-lg bg-gradient-to-b from-gray-800/60 to-gray-900/60 border border-gray-700/50 shadow-lg animate-pulse">
+          <div class="h-5 w-32 bg-gray-700/50 rounded mx-auto mb-2"></div>
+          <div class="h-8 w-40 bg-gray-700/50 rounded mx-auto mb-4"></div>
+
+          <div class="flex justify-center gap-3 mt-4 mb-2">
+            <div class="h-8 w-24 bg-gray-800/70 rounded-full"></div>
+            <div class="h-8 w-24 bg-gray-800/70 rounded-full"></div>
+          </div>
         </div>
+
+        <!-- 趋势分析骨架屏 -->
+        <div class="mt-6 grid grid-cols-3 gap-3">
+          <div class="p-3 rounded-lg bg-gradient-to-br from-green-600/20 to-green-800/20 border border-green-500/30 animate-pulse">
+            <div class="h-6 w-16 bg-green-500/20 rounded mx-auto mb-1"></div>
+            <div class="h-4 w-12 bg-green-500/20 rounded mx-auto"></div>
+          </div>
+
+          <div class="p-3 rounded-lg bg-gradient-to-br from-gray-700/20 to-gray-800/20 border border-gray-600/30 animate-pulse">
+            <div class="h-6 w-16 bg-gray-600/20 rounded mx-auto mb-1"></div>
+            <div class="h-4 w-12 bg-gray-600/20 rounded mx-auto"></div>
+          </div>
+
+          <div class="p-3 rounded-lg bg-gradient-to-br from-red-600/20 to-red-800/20 border border-red-500/30 animate-pulse">
+            <div class="h-6 w-16 bg-red-500/20 rounded mx-auto mb-1"></div>
+            <div class="h-4 w-12 bg-red-500/20 rounded mx-auto"></div>
+          </div>
+        </div>
+
+        <!-- 市场趋势分析骨架屏 -->
+        <div class="mt-6">
+          <div class="h-6 w-32 bg-gray-700/50 rounded mb-3"></div>
+          <div class="p-4 rounded-lg bg-gray-800/30 border border-gray-700/50">
+            <div class="h-4 w-full bg-gray-700/50 rounded mb-2"></div>
+            <div class="h-4 w-3/4 bg-gray-700/50 rounded"></div>
+          </div>
+        </div>
+
+        <!-- 技术指标骨架屏 -->
+        <div class="mt-6">
+          <div class="h-6 w-32 bg-gray-700/50 rounded mb-3"></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
+              <div class="h-4 w-16 bg-gray-700/50 rounded mb-2"></div>
+              <div class="h-6 w-full bg-gray-700/50 rounded"></div>
+            </div>
+            <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
+              <div class="h-4 w-16 bg-gray-700/50 rounded mb-2"></div>
+              <div class="h-6 w-full bg-gray-700/50 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 代币未找到状态 -->
+      <div v-else-if="isTokenNotFound" class="flex items-center justify-center h-full">
+        <TokenNotFoundView
+          :symbol="currentSymbol"
+          @refresh="forceRefreshData"
+        />
       </div>
 
       <!-- 错误状态 -->
@@ -43,8 +100,8 @@
         </div>
       </div>
 
-      <!-- 正常内容 -->
-      <div v-else class="max-w-[375px] mx-auto px-4 pb-16">
+      <!-- 正常内容 - 只要分析数据加载完成就显示 -->
+      <div v-else-if="analysisData" class="max-w-[375px] mx-auto px-4 pb-16">
         <!-- 价格展示卡片 -->
         <div class="mt-6 p-5 rounded-lg bg-gradient-to-b from-gray-800/60 to-gray-900/60 border border-gray-700/50 shadow-lg">
           <h2 class="text-center text-gray-400 mb-1">当前价格</h2>
@@ -56,29 +113,24 @@
             -- USD
           </div>
 
+          <!-- 操作按钮 -->
           <div class="flex justify-center gap-3 mt-4 mb-2">
-            <button class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gray-800/70 text-sm backdrop-blur-sm cursor-pointer">
-              <i class="ri-save-line w-4 h-4 flex items-center justify-center"></i>
-              <span>保存截图</span>
+            <button
+              class="px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-full transition flex items-center gap-1"
+              @click="shareToTwitter"
+            >
+              <i class="ri-twitter-fill"></i>
+              <span class="text-sm">分享到推特</span>
             </button>
-            <button class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gray-800/70 text-sm backdrop-blur-sm cursor-pointer">
-              <i class="ri-share-line w-4 h-4 flex items-center justify-center"></i>
-              <span>分享到推特</span>
+            <button
+              class="px-4 py-2 bg-gray-600/20 hover:bg-gray-600/30 text-gray-400 rounded-full transition flex items-center gap-1"
+              @click="saveChartImage"
+            >
+              <i class="ri-image-line"></i>
+              <span class="text-sm">保存图片</span>
             </button>
           </div>
 
-          <!-- 价格走势图 -->
-          <div class="relative mt-4">
-            <div v-if="chartLoading" class="absolute inset-0 z-10 flex items-center justify-center bg-[#0A1A3A]/80">
-              <div class="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-            </div>
-            <!-- 确保ref直接绑定到div上，并添加id属性以便于调试 -->
-            <div id="price-chart-container" ref="priceChart" class="price-chart h-[180px] rounded-lg overflow-hidden bg-[#0F2A5A] shadow-lg border-2 border-blue-500/50 flex items-center justify-center">
-              <div v-if="!chartLoading && (!priceHistory?.prices || priceHistory.prices.length === 0)" class="text-gray-400 text-sm">
-                暂无价格数据
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- 趋势分析卡片 -->
@@ -126,7 +178,10 @@
             <div class="grid grid-cols-2 gap-3">
               <!-- RSI -->
               <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
-                <div class="text-sm text-gray-400 mb-1">RSI (14)</div>
+                <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
+                  RSI (14)
+                  <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.RSI"></i>
+                </div>
                 <div class="flex items-center justify-between">
                   <span class="font-medium">{{ analysisData.indicators_analysis.RSI.value }}</span>
                   <span :class="getIndicatorClass(analysisData.indicators_analysis.RSI.support_trend)" class="text-xs">
@@ -137,7 +192,10 @@
 
               <!-- BIAS -->
               <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
-              <div class="text-sm text-gray-400 mb-1">BIAS</div>
+              <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
+                BIAS
+                <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.BIAS"></i>
+              </div>
               <div class="flex items-center justify-between">
                 <span class="font-medium">{{ analysisData.indicators_analysis.BIAS.value }}</span>
                 <span :class="getIndicatorClass(analysisData.indicators_analysis.BIAS.support_trend)" class="text-xs">
@@ -148,7 +206,10 @@
 
             <!-- PSY -->
             <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
-              <div class="text-sm text-gray-400 mb-1">PSY</div>
+              <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
+                PSY
+                <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.PSY"></i>
+              </div>
               <div class="flex items-center justify-between">
                 <span class="font-medium">{{ analysisData.indicators_analysis.PSY.value }}</span>
                 <span :class="getIndicatorClass(analysisData.indicators_analysis.PSY.support_trend)" class="text-xs">
@@ -159,7 +220,10 @@
 
             <!-- VWAP -->
             <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
-              <div class="text-sm text-gray-400 mb-1">VWAP</div>
+              <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
+                VWAP
+                <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.VWAP"></i>
+              </div>
               <div class="flex items-center justify-between">
                 <span class="font-medium">{{ analysisData.indicators_analysis.VWAP.value.toFixed(2) }}</span>
                 <span :class="getIndicatorClass(analysisData.indicators_analysis.VWAP.support_trend)" class="text-xs">
@@ -168,9 +232,12 @@
               </div>
             </div>
 
-            <!-- FundingRate -->
+            <!-- Funding Rate -->
             <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
-              <div class="text-sm text-gray-400 mb-1">资金费率</div>
+              <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
+                Funding Rate
+                <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.FundingRate"></i>
+              </div>
               <div class="flex items-center justify-between">
                 <span class="font-medium">{{ (analysisData.indicators_analysis.FundingRate.value * 100).toFixed(4) }}%</span>
                 <span :class="getIndicatorClass(analysisData.indicators_analysis.FundingRate.support_trend)" class="text-xs">
@@ -179,9 +246,12 @@
               </div>
             </div>
 
-            <!-- ExchangeNetflow -->
+            <!-- Exchange Netflow -->
             <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
-              <div class="text-sm text-gray-400 mb-1">交易所净流入</div>
+              <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
+                Exchange Netflow
+                <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.ExchangeNetflow"></i>
+              </div>
               <div class="flex items-center justify-between">
                 <span class="font-medium">{{ analysisData.indicators_analysis.ExchangeNetflow.value.toFixed(2) }}</span>
                 <span :class="getIndicatorClass(analysisData.indicators_analysis.ExchangeNetflow.support_trend)" class="text-xs">
@@ -192,7 +262,10 @@
 
             <!-- NUPL -->
             <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
-              <div class="text-sm text-gray-400 mb-1">NUPL</div>
+              <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
+                NUPL
+                <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.NUPL"></i>
+              </div>
               <div class="flex items-center justify-between">
                 <span class="font-medium">{{ analysisData.indicators_analysis.NUPL.value.toFixed(2) }}</span>
                 <span :class="getIndicatorClass(analysisData.indicators_analysis.NUPL.support_trend)" class="text-xs">
@@ -201,9 +274,12 @@
               </div>
             </div>
 
-            <!-- MayerMultiple -->
+            <!-- Mayer Multiple -->
             <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
-              <div class="text-sm text-gray-400 mb-1">梅耶倍数</div>
+              <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
+                Mayer Multiple
+                <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.MayerMultiple"></i>
+              </div>
               <div class="flex items-center justify-between">
                 <span class="font-medium">{{ analysisData.indicators_analysis.MayerMultiple.value.toFixed(2) }}</span>
                 <span :class="getIndicatorClass(analysisData.indicators_analysis.MayerMultiple.support_trend)" class="text-xs">
@@ -216,46 +292,52 @@
             <!-- MACD (独占一行) -->
             <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50 mt-3">
               <div class="flex items-center justify-between mb-2">
-                <div class="text-sm text-gray-400">MACD</div>
+                <div class="text-sm text-gray-400 flex items-center gap-1">
+                  MACD
+                  <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.MACD"></i>
+                </div>
                 <span :class="getIndicatorClass(analysisData.indicators_analysis.MACD.support_trend)" class="text-xs">
                   {{ getIndicatorText(analysisData.indicators_analysis.MACD.support_trend) }}
                 </span>
               </div>
               <div class="grid grid-cols-3 gap-2">
                 <div class="text-center p-1 rounded bg-blue-900/20 border border-blue-800/30">
-                  <div class="text-xs text-gray-400">柱状图</div>
+                  <div class="text-xs text-gray-400">Histogram</div>
                   <div class="text-sm">{{ analysisData.indicators_analysis.MACD.value.histogram.toFixed(2) }}</div>
                 </div>
                 <div class="text-center p-1 rounded bg-blue-900/20 border border-blue-800/30">
-                  <div class="text-xs text-gray-400">MACD线</div>
+                  <div class="text-xs text-gray-400">MACD Line</div>
                   <div class="text-sm">{{ analysisData.indicators_analysis.MACD.value.line.toFixed(2) }}</div>
                 </div>
                 <div class="text-center p-1 rounded bg-blue-900/20 border border-blue-800/30">
-                  <div class="text-xs text-gray-400">信号线</div>
+                  <div class="text-xs text-gray-400">Signal Line</div>
                   <div class="text-sm">{{ analysisData.indicators_analysis.MACD.value.signal.toFixed(2) }}</div>
                 </div>
               </div>
             </div>
 
-            <!-- 布林带 (独占一行) -->
+            <!-- Bollinger Bands (独占一行) -->
             <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50 mt-3">
               <div class="flex items-center justify-between mb-2">
-                <div class="text-sm text-gray-400">布林带</div>
+                <div class="text-sm text-gray-400 flex items-center gap-1">
+                  Bollinger Bands
+                  <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.BollingerBands"></i>
+                </div>
                 <span :class="getIndicatorClass(analysisData.indicators_analysis.BollingerBands.support_trend)" class="text-xs">
                   {{ getIndicatorText(analysisData.indicators_analysis.BollingerBands.support_trend) }}
                 </span>
               </div>
               <div class="grid grid-cols-3 gap-2">
                 <div class="text-center p-1 rounded bg-red-900/20 border border-red-800/30">
-                  <div class="text-xs text-gray-400">上轨</div>
+                  <div class="text-xs text-gray-400">Upper Band</div>
                   <div class="text-sm">{{ analysisData.indicators_analysis.BollingerBands.value.upper.toFixed(2) }}</div>
                 </div>
                 <div class="text-center p-1 rounded bg-gray-700/30 border border-gray-600/30">
-                  <div class="text-xs text-gray-400">中轨</div>
+                  <div class="text-xs text-gray-400">Middle Band</div>
                   <div class="text-sm">{{ analysisData.indicators_analysis.BollingerBands.value.middle.toFixed(2) }}</div>
                 </div>
                 <div class="text-center p-1 rounded bg-green-900/20 border border-green-800/30">
-                  <div class="text-xs text-gray-400">下轨</div>
+                  <div class="text-xs text-gray-400">Lower Band</div>
                   <div class="text-sm">{{ analysisData.indicators_analysis.BollingerBands.value.lower.toFixed(2) }}</div>
                 </div>
               </div>
@@ -264,7 +346,10 @@
             <!-- DMI (独占一行) -->
             <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50 mt-3">
               <div class="flex items-center justify-between mb-2">
-                <div class="text-sm text-gray-400">DMI</div>
+                <div class="text-sm text-gray-400 flex items-center gap-1">
+                  DMI
+                  <i class="ri-question-line cursor-help" :v-tooltip="indicatorExplanations.DMI"></i>
+                </div>
                 <span :class="getIndicatorClass(analysisData.indicators_analysis.DMI.support_trend)" class="text-xs">
                   {{ getIndicatorText(analysisData.indicators_analysis.DMI.support_trend) }}
                 </span>
@@ -402,26 +487,34 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, nextTick, watch, onUnmounted } from 'vue'
-import * as echarts from 'echarts'
-import { getTechnicalAnalysis, getPriceHistory, type TechnicalAnalysisData, type PriceHistoryData } from '@/api'
-import { parseSymbolFromUrl } from '@/utils/trading'
+import { onMounted, ref, nextTick, watch } from 'vue'
+import html2canvas from 'html2canvas'
+// @ts-ignore
+// eslint-disable-next-line
+declare module 'qrcode';
+import QRCode from 'qrcode'
 
-// 检查是否在扩展环境中
+import { getTechnicalAnalysis } from '@/api'
+import { parseSymbolFromUrl } from '@/utils/trading'
+import type {
+  FormattedTechnicalAnalysisData
+} from '@/types/technical-analysis'
+import { formatTechnicalAnalysisData } from '@/utils/data-formatter'
+import TokenNotFoundView from '@/components/TokenNotFoundView.vue'
+
 const isExtensionEnvironment = (): boolean => {
   return typeof chrome !== 'undefined' &&
          typeof chrome.runtime !== 'undefined' &&
          typeof chrome.runtime.getURL === 'function';
 }
 
-const priceChart = ref<HTMLElement | null>(null)
-const analysisData = ref<TechnicalAnalysisData | null>(null)
-const priceHistory = ref<PriceHistoryData | null>(null)
-const loading = ref(false)
-const chartLoading = ref(false)
+const analysisData = ref<FormattedTechnicalAnalysisData | null>(null)
+const loading = ref(false) // 整体加载状态
+const analysisLoading = ref(false) // 分析数据加载状态
 const error = ref<string | null>(null)
 const currentSymbol = ref<string>('')
 const retryCount = ref(0)
+const isTokenNotFound = ref(false) // 用于标记代币是否未找到（404错误）
 const realtimePrice = ref<number | null>(null)
 
 const showRefreshModal = ref(false)
@@ -429,52 +522,21 @@ const refreshProgress = ref(0)
 const refreshText = ref('正在刷新数据...')
 
 let refreshTimer: ReturnType<typeof setInterval> | null = null
-let myChart: echarts.ECharts | null = null
-let ws: WebSocket | null = null
 
-// 初始化WebSocket连接
-const initWebSocket = () => {
-  if (ws) {
-    ws.close()
-  }
-
-  const wsUrl = `wss://stream.binance.com:9443/ws/${currentSymbol.value.toLowerCase()}usdt@ticker`
-  ws = new WebSocket(wsUrl)
-
-  ws.onmessage = (event) => {
-    const data = JSON.parse(event.data)
-    realtimePrice.value = parseFloat(data.c)
-  }
-
-  ws.onerror = (error) => {
-    console.error('WebSocket错误:', error)
-  }
-
-  ws.onclose = () => {
-    console.log('WebSocket连接关闭')
-  }
+// 指标英文名与说明映射
+const indicatorExplanations: Record<string, string> = {
+  RSI: 'Relative Strength Index, measures price momentum and overbought/oversold conditions.',
+  BIAS: 'Bias, measures the deviation of price from its moving average.',
+  PSY: 'Psychological Line, reflects market participants\' sentiment.',
+  VWAP: 'Volume Weighted Average Price, reflects the true trading value.',
+  FundingRate: 'Funding Rate, reflects the balance of long and short forces in perpetual contracts.',
+  ExchangeNetflow: 'Exchange Netflow, shows the net inflow/outflow of funds on exchanges.',
+  NUPL: 'Net Unrealized Profit/Loss, reflects the overall profit/loss status of the market.',
+  MayerMultiple: 'Mayer Multiple, ratio of current price to 200-day moving average.',
+  MACD: 'Moving Average Convergence Divergence, used to judge trend strength and possible turning points.',
+  BollingerBands: 'Bollinger Bands, measures price volatility and possible support/resistance.',
+  DMI: 'Directional Movement Index, used to judge trend direction and strength.'
 }
-
-// 在组件挂载时初始化WebSocket
-onMounted(() => {
-  if (currentSymbol.value) {
-    initWebSocket()
-  }
-})
-
-// 在组件卸载时关闭WebSocket
-onUnmounted(() => {
-  if (ws) {
-    ws.close()
-  }
-})
-
-// 监听currentSymbol变化，重新初始化WebSocket
-watch(currentSymbol, (newSymbol) => {
-  if (newSymbol) {
-    initWebSocket()
-  }
-})
 
 // 格式化价格显示
 const formatPrice = (price?: number | string | null) => {
@@ -554,8 +616,15 @@ const getBaseSymbol = (symbol: string) => {
 // 加载分析数据
 const loadAnalysisData = async (forceRefresh: boolean = false) => {
   try {
+    // 重置所有状态
     loading.value = true
     error.value = null
+    analysisLoading.value = true
+
+    // 确保在开始加载前清除任何现有数据
+    if (!forceRefresh) {
+      analysisData.value = null
+    }
 
     let symbol: string | null = null;
     let url: string = '';
@@ -592,475 +661,56 @@ const loadAnalysisData = async (forceRefresh: boolean = false) => {
     console.log('正在获取交易对数据:', symbol)
 
     try {
-      const [analysisResponse, priceResponse] = await Promise.all([
-        getTechnicalAnalysis(symbol, forceRefresh),
-        getPriceHistory(symbol)
-      ])
+      // 优先加载分析数据
+      const analysisPromise = getTechnicalAnalysis(symbol, forceRefresh)
+        .then(response => {
+          console.log('分析数据加载完成:', JSON.stringify(response, null, 2))
+          // 格式化分析数据
+          const formattedData = formatTechnicalAnalysisData(response)
+          analysisData.value = formattedData
+          // 重置重试计数
+          retryCount.value = 0
+          // 标记分析数据加载完成
+          analysisLoading.value = false
+          // 确保视图更新
+          return nextTick()
+        })
+        .catch(error => {
+          console.error('加载分析数据失败:', error)
+          // 检查是否是404错误（代币未找到）
+          if (error.response?.status === 404) {
+            console.log('代币未找到，显示特殊提示')
+            isTokenNotFound.value = true
+            error.value = null // 清除一般错误，使用特殊的未找到视图
+          } else {
+            isTokenNotFound.value = false
+            error.value = error.message || '加载分析数据失败'
+          }
+          analysisLoading.value = false
+          throw error // 重新抛出错误以便外层捕获
+        })
 
-      console.log('原始分析数据:', JSON.stringify(analysisResponse, null, 2))
-      console.log('原始价格数据:', JSON.stringify(priceResponse, null, 2))
-
-      // 数据验证
-      if (!analysisResponse || !analysisResponse.current_price || !analysisResponse.trend_analysis) {
-        console.error('分析数据格式错误:', analysisResponse)
-        throw new Error('分析数据格式错误')
-      }
-
-      if (!priceResponse || !priceResponse.prices || !Array.isArray(priceResponse.prices)) {
-        console.error('价格历史数据为空:', priceResponse)
-        throw new Error('价格历史数据为空')
-      }
-
-      // 更新数据
-      analysisData.value = analysisResponse
-      priceHistory.value = priceResponse
-
-      // 重置重试计数
-      retryCount.value = 0
-      console.log('数据获取成功，开始初始化图表')
-
-      // 确保视图更新
-      await nextTick()
-
-      // 确保视图更新后再初始化图表
-      await nextTick()
-
-      // 检查图表容器是否存在
-      console.log('图表容器检查:', {
-        priceChartRef: priceChart.value,
-        priceChartElement: document.getElementById('price-chart-container')
-      })
-
-      // 初始化图表
-      if (priceChart.value) {
-        chartLoading.value = true
-        console.log('开始初始化图表，价格数据长度:', priceResponse.prices.length)
-
-        // 确保DOM已完全渲染
-        await nextTick()
-
-        try {
-          // 延迟一点时间确保DOM已完全渲染
-          setTimeout(() => {
-            try {
-              console.log('DOM已渲染，开始初始化图表')
-              initChart()
-            } catch (innerError) {
-              console.error('图表初始化内部错误:', innerError)
-            } finally {
-              chartLoading.value = false
-            }
-          }, 500)
-        } catch (chartError) {
-          console.error('初始化图表失败:', chartError)
-          chartLoading.value = false
-        }
-      } else {
-        console.error('图表容器不存在')
-      }
+      // 等待分析数据加载完成
+      await analysisPromise
 
       // 确认数据已更新
-      console.log('视图数据已更新，当前价格:', formatPrice(analysisData.value?.current_price))
+      console.log('分析数据已更新，当前价格:', formatPrice(analysisData.value?.current_price))
 
     } catch (apiError: any) {
       console.error('API调用失败:', apiError)
-      error.value = apiError.message || '加载数据失败'
+      // 错误已在各自的Promise中处理
     }
 
   } catch (e) {
     console.error('加载分析数据失败:', e)
-    if (!error.value) {
+    if (!error.value && !isTokenNotFound.value) {
       error.value = e instanceof Error ? e.message : '加载数据失败'
     }
   } finally {
+    // 整体加载状态结束
     loading.value = false
   }
 }
-
-// 初始化图表
-const initChart = () => {
-  console.log('初始化图表 - 开始')
-
-  // 再次检查图表容器
-  if (!priceChart.value) {
-    console.error('图表容器不存在，无法初始化图表')
-    return
-  }
-
-  // 检查DOM元素尺寸
-  const containerWidth = priceChart.value.clientWidth
-  const containerHeight = priceChart.value.clientHeight
-  console.log(`图表容器尺寸: ${containerWidth}x${containerHeight}`)
-
-  if (containerWidth === 0 || containerHeight === 0) {
-    console.error('图表容器尺寸为0，无法初始化图表')
-    return
-  }
-
-  // 如果没有价格历史数据，不显示图表
-  if (!priceHistory.value?.prices) {
-    console.error('没有价格历史数据，无法初始化图表')
-    return
-  }
-
-  try {
-    // 销毁旧图表实例
-    if (myChart) {
-      console.log('销毁旧图表实例')
-      myChart.dispose()
-      myChart = null
-    }
-
-    // 创建新图表实例
-    console.log('创建新图表实例...')
-    myChart = echarts.init(priceChart.value)
-    console.log('创建新图表实例成功')
-
-    const prices = priceHistory.value.prices
-    console.log('处理价格数据，数据点数量:', prices.length)
-
-    // 打印完整的价格数据以便调试
-    console.log('价格数据样本:', JSON.stringify(prices.slice(0, 5)))
-    console.log('价格数据类型检查:', {
-      timestamp: typeof prices[0].timestamp,
-      price: typeof prices[0].price
-    })
-
-    // 确保价格数据格式正确
-    if (!prices.every(item => typeof item.timestamp === 'number' && typeof item.price === 'number')) {
-      console.error('价格数据格式不正确，尝试修复')
-      // 尝试修复数据格式
-      const fixedPrices = prices.map(item => ({
-        timestamp: typeof item.timestamp === 'string' ? new Date(item.timestamp).getTime() : item.timestamp,
-        price: typeof item.price === 'string' ? parseFloat(item.price) : item.price
-      }))
-      console.log('修复后的价格数据样本:', fixedPrices.slice(0, 3))
-
-      // 使用修复后的数据
-      // 使用时间戳作为X轴数据
-      const data = fixedPrices.map(item => [item.timestamp, item.price])
-
-      // 不再需要单独的times变量
-
-      // 准备图表配置
-
-      console.log('设置图表配置')
-      // 创建一个简化的图表配置
-      const option = {
-        animation: false,
-        grid: {
-          left: 10,
-          right: 10,
-          bottom: 10,
-          top: 10,
-          containLabel: false
-        },
-        tooltip: {
-          trigger: 'axis',
-          axisPointer: {
-            type: 'cross',
-            label: {
-              show: false
-            },
-            lineStyle: {
-              color: 'rgba(255, 255, 255, 0.3)',
-              width: 1
-            },
-            crossStyle: {
-              color: 'rgba(255, 255, 255, 0.3)',
-              width: 1
-            }
-          },
-          backgroundColor: 'rgba(15, 42, 90, 0.9)',
-          borderColor: 'rgba(91, 158, 255, 0.5)',
-          borderWidth: 1,
-          textStyle: {
-            color: '#fff'
-          },
-          formatter: function(params: any) {
-            console.log('Tooltip params:', params);
-            const data = params[0];
-
-            // 检查data.name是否为有效的时间字符串
-            let formattedDate = '';
-            try {
-              // 尝试直接使用时间字符串
-              if (data.name && data.name.includes(':')) {
-                formattedDate = data.name;
-              } else {
-                // 尝试将时间戳转换为日期
-                const timestamp = data.axisValue || data.name;
-                if (timestamp && !isNaN(Number(timestamp))) {
-                  const date = new Date(Number(timestamp));
-                  formattedDate = `${date.getMonth()+1}月${date.getDate()}日 ${date.getHours()}:00`;
-                } else {
-                  formattedDate = '时间未知';
-                }
-              }
-            } catch (e) {
-              console.error('日期格式化错误:', e, data);
-              formattedDate = '时间未知';
-            }
-
-            // 获取历史价格 - 从data.value或data.data[1]中获取
-            let historyPrice;
-            if (data.value !== undefined && data.value !== null) {
-              historyPrice = data.value;
-            } else if (data.data && data.data.length > 1) {
-              historyPrice = data.data[1];
-            } else {
-              historyPrice = null;
-            }
-
-            // 格式化历史价格
-            const formattedHistoryPrice = historyPrice !== null ? formatPrice(historyPrice) : '--';
-
-            // 获取当前实时价格
-            const currentPrice = analysisData.value?.current_price || '';
-            const formattedCurrentPrice = currentPrice ? formatPrice(currentPrice) : '';
-
-            // 返回格式化的tooltip内容
-            let tooltipContent = `${formattedDate}<br/>${data.marker} 历史价格: <strong>${formattedHistoryPrice}</strong>`;
-
-            // 如果有当前价格，添加到tooltip中
-            if (formattedCurrentPrice) {
-              tooltipContent += `<br/>当前实时价格: <strong style="color:#4CAF50">${formattedCurrentPrice}</strong>`;
-            }
-
-            return tooltipContent;
-          }
-        },
-        xAxis: {
-          show: false,
-          type: 'time',  // 使用时间类型
-          boundaryGap: false,
-          axisLine: { show: false },
-          axisTick: { show: false },
-          axisLabel: { show: false },
-          splitLine: { show: false }
-        },
-        yAxis: {
-          show: false,
-          type: 'value',
-          scale: true
-        },
-        series: [
-          {
-            name: '价格',
-            type: 'line',
-            data: data, // 使用[时间戳, 价格]格式的数据
-            encode: {
-              x: 0, // 第一个元素是X轴数据（时间戳）
-              y: 1  // 第二个元素是Y轴数据（价格）
-            },
-            smooth: true,
-            symbol: 'circle',
-            symbolSize: 0, // 默认不显示
-            showSymbol: false, // 默认不显示点
-            emphasis: {
-              scale: true,
-              symbolSize: 6, // 鼠标悬停时显示
-            },
-            itemStyle: {
-              color: '#5B9EFF'
-            },
-            lineStyle: {
-              color: '#5B9EFF',
-              width: 3
-            },
-            areaStyle: {
-              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: 'rgba(91, 158, 255, 0.8)' },
-                { offset: 1, color: 'rgba(91, 158, 255, 0.1)' }
-              ])
-            }
-          }
-        ],
-        backgroundColor: '#0F2A5A'
-      }
-
-      console.log('应用图表配置')
-      myChart.setOption(option)
-    } else {
-      // 使用原始数据
-      // 使用时间戳作为X轴数据
-      const data = prices.map(item => [item.timestamp, item.price])
-
-      // 不再需要单独的times变量
-
-      // 准备图表配置
-
-      console.log('设置图表配置')
-      // 创建一个简化的图表配置
-      const option = {
-        animation: false,
-        grid: {
-          left: 10,
-          right: 10,
-          bottom: 10,
-          top: 10,
-          containLabel: false
-        },
-        tooltip: {
-          trigger: 'axis',
-          axisPointer: {
-            type: 'cross',
-            label: {
-              show: false
-            },
-            lineStyle: {
-              color: 'rgba(255, 255, 255, 0.3)',
-              width: 1
-            },
-            crossStyle: {
-              color: 'rgba(255, 255, 255, 0.3)',
-              width: 1
-            }
-          },
-          backgroundColor: 'rgba(15, 42, 90, 0.9)',
-          borderColor: 'rgba(91, 158, 255, 0.5)',
-          borderWidth: 1,
-          textStyle: {
-            color: '#fff'
-          },
-          formatter: function(params: any) {
-            console.log('Tooltip params:', params);
-            const data = params[0];
-
-            // 检查data.name是否为有效的时间字符串
-            let formattedDate = '';
-            try {
-              // 尝试直接使用时间字符串
-              if (data.name && data.name.includes(':')) {
-                formattedDate = data.name;
-              } else {
-                // 尝试将时间戳转换为日期
-                const timestamp = data.axisValue || data.name;
-                if (timestamp && !isNaN(Number(timestamp))) {
-                  const date = new Date(Number(timestamp));
-                  formattedDate = `${date.getMonth()+1}月${date.getDate()}日 ${date.getHours()}:00`;
-                } else {
-                  formattedDate = '时间未知';
-                }
-              }
-            } catch (e) {
-              console.error('日期格式化错误:', e, data);
-              formattedDate = '时间未知';
-            }
-
-            // 获取历史价格 - 从data.value或data.data[1]中获取
-            let historyPrice;
-            if (data.value !== undefined && data.value !== null) {
-              historyPrice = data.value;
-            } else if (data.data && data.data.length > 1) {
-              historyPrice = data.data[1];
-            } else {
-              historyPrice = null;
-            }
-
-            // 格式化历史价格
-            const formattedHistoryPrice = historyPrice !== null ? formatPrice(historyPrice) : '--';
-
-            // 获取当前实时价格
-            const currentPrice = analysisData.value?.current_price || '';
-            const formattedCurrentPrice = currentPrice ? formatPrice(currentPrice) : '';
-
-            // 返回格式化的tooltip内容
-            let tooltipContent = `${formattedDate}<br/>${data.marker} 历史价格: <strong>${formattedHistoryPrice}</strong>`;
-
-            // 如果有当前价格，添加到tooltip中
-            if (formattedCurrentPrice) {
-              tooltipContent += `<br/>当前实时价格: <strong style="color:#4CAF50">${formattedCurrentPrice}</strong>`;
-            }
-
-            return tooltipContent;
-          }
-        },
-        xAxis: {
-          show: false,
-          type: 'time',  // 使用时间类型
-          boundaryGap: false,
-          axisLine: { show: false },
-          axisTick: { show: false },
-          axisLabel: { show: false },
-          splitLine: { show: false }
-        },
-        yAxis: {
-          show: false,
-          type: 'value',
-          scale: true
-        },
-        series: [
-          {
-            name: '价格',
-            type: 'line',
-            data: data, // 使用[时间戳, 价格]格式的数据
-            encode: {
-              x: 0, // 第一个元素是X轴数据（时间戳）
-              y: 1  // 第二个元素是Y轴数据（价格）
-            },
-            smooth: true,
-            symbol: 'circle',
-            symbolSize: 0, // 默认不显示
-            showSymbol: false, // 默认不显示点
-            emphasis: {
-              scale: true,
-              symbolSize: 6, // 鼠标悬停时显示
-            },
-            itemStyle: {
-              color: '#5B9EFF'
-            },
-            lineStyle: {
-              color: '#5B9EFF',
-              width: 3
-            },
-            areaStyle: {
-              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: 'rgba(91, 158, 255, 0.8)' },
-                { offset: 1, color: 'rgba(91, 158, 255, 0.1)' }
-              ])
-            }
-          }
-        ],
-        backgroundColor: '#0F2A5A'
-      }
-
-      console.log('应用图表配置')
-      myChart.setOption(option)
-    }
-
-    // 确保图表正确适应容器大小
-    setTimeout(() => {
-      if (myChart) {
-        myChart.resize()
-        console.log('图表大小已调整')
-      }
-    }, 500)
-
-    console.log('图表初始化完成')
-  } catch (e) {
-    console.error('初始化图表失败:', e)
-    error.value = '初始化图表失败'
-  }
-}
-
-// 监听窗口大小变化，调整图表大小
-const handleResize = () => {
-  if (myChart) {
-    console.log('窗口大小变化，调整图表大小')
-    myChart.resize()
-  }
-}
-
-window.addEventListener('resize', handleResize)
-
-// 组件卸载时清理
-onUnmounted(() => {
-  window.removeEventListener('resize', handleResize)
-  if (myChart) {
-    myChart.dispose()
-  }
-})
 
 // 组件挂载时加载数据
 onMounted(async () => {
@@ -1074,59 +724,13 @@ onMounted(async () => {
     try {
       console.log('开始加载分析数据')
       await loadAnalysisData()
-
-      // 如果图表没有正确初始化，尝试再次初始化
-      setTimeout(() => {
-        if (priceChart.value && priceHistory.value?.prices && (!myChart || !myChart.getOption())) {
-          console.log('尝试再次初始化图表')
-          chartLoading.value = true
-          try {
-            initChart()
-          } finally {
-            chartLoading.value = false
-          }
-        } else if (priceChart.value && (!priceHistory.value?.prices || priceHistory.value.prices.length === 0)) {
-          // 如果没有价格数据，尝试创建一个测试图表
-          console.log('没有价格数据，尝试创建测试图表')
-          chartLoading.value = true
-          try {
-            // 创建测试数据
-            const testData = Array.from({ length: 24 }, (_, i) => ({
-              timestamp: Date.now() - (23 - i) * 3600 * 1000,
-              price: 1000 + Math.random() * 100
-            }))
-
-            // 临时设置价格数据
-            const originalPriceHistory = priceHistory.value
-            priceHistory.value = {
-              symbol: 'TEST',
-              interval: '1h',
-              period: '24h',
-              prices: testData,
-              change_percent: 0,
-              high: 0,
-              low: 0
-            }
-
-            // 初始化图表
-            initChart()
-
-            // 恢复原始价格数据
-            setTimeout(() => {
-              priceHistory.value = originalPriceHistory
-            }, 2000)
-          } finally {
-            chartLoading.value = false
-          }
-        }
-      }, 1000)
     } catch (e) {
       console.error('加载数据失败:', e)
     }
   }, 500)
 })
 
-// 监听交易对变化，更新图表
+// 监听交易对变化，更新数据
 watch(currentSymbol, async (newSymbol) => {
   if (newSymbol) {
     await loadAnalysisData()
@@ -1220,24 +824,39 @@ const simulateRefreshProgress = () => {
 
   // 每100ms更新一次，使动画更流畅
   refreshTimer = setInterval(() => {
+    // 检查模态框是否仍然显示
+    if (!showRefreshModal.value) {
+      // 如果模态框已关闭，清除定时器
+      if (refreshTimer !== null) {
+        clearInterval(refreshTimer)
+        refreshTimer = null
+      }
+      return
+    }
+
     const elapsedMs = Date.now() - startTime
 
     // 计算当前应该显示的进度
-    refreshProgress.value = Math.min(95, getProgressForTime(elapsedMs))
+    const newProgress = Math.min(95, getProgressForTime(elapsedMs))
+
+    // 安全地更新进度值
+    if (refreshProgress && typeof refreshProgress.value !== 'undefined') {
+      refreshProgress.value = newProgress
+    }
 
     // 根据进度更新提示文本
-    if (refreshProgress.value < 30) {
+    if (newProgress < 30) {
       refreshText.value = '正在获取市场数据并进行技术指标计算...'
-    } else if (refreshProgress.value < 60) {
+    } else if (newProgress < 60) {
       refreshText.value = '正在进行趋势分析和概率评估...'
-    } else if (refreshProgress.value < 85) {
+    } else if (newProgress < 85) {
       refreshText.value = '正在生成交易建议和风险评估...'
     } else {
       refreshText.value = '最终数据整合中，即将完成...'
     }
 
     // 达到95%后停止，等待实际请求完成
-    if (refreshProgress.value >= 95) {
+    if (newProgress >= 95) {
       if (refreshTimer !== null) {
         clearInterval(refreshTimer)
         refreshTimer = null
@@ -1249,220 +868,527 @@ const simulateRefreshProgress = () => {
 // 强制刷新数据
 const forceRefreshData = async () => {
   try {
+    // 如果已经在刷新中，则不执行
+    if (showRefreshModal.value) {
+      return
+    }
+
+    console.log('执行强制刷新...')
+
     // 开始模拟进度
     simulateRefreshProgress()
 
-    // 调用API强制刷新数据
-    if (currentSymbol.value) {
+    // 检查是否有当前交易对
+    if (!currentSymbol.value) {
+      error.value = '无法获取当前交易对信息'
+      return
+    }
+
+    try {
+      // 更新提示文本
+      refreshText.value = '正在从币安获取最新市场数据...'
+
       try {
-        const data = await getTechnicalAnalysis(currentSymbol.value, true)
+        // 重置所有状态，但保留现有数据直到新数据加载完成
+        error.value = null
+        isTokenNotFound.value = false
+        analysisLoading.value = true
 
-        // 详细记录API返回的数据结构
-        console.log('强制刷新API返回的原始数据:', JSON.stringify(data))
+        // 优先加载分析数据 - 强制刷新
+        console.log('正在执行强制刷新请求，symbol:', currentSymbol.value)
+        const refreshResponse = await getTechnicalAnalysis(currentSymbol.value, true)
+        console.log('强制刷新请求成功，获取到新数据:', refreshResponse)
 
-        // 检查数据结构
-        if (!data || !data.current_price || !data.trend_analysis) {
-          console.error('强制刷新API返回的数据格式不正确')
-          error.value = '强制刷新失败，请稍后重试'
-          return
-        }
+        // 更新分析数据
+        analysisData.value = refreshResponse
 
-        // 强制刷新成功后，等待1秒再请求普通接口获取最新数据
-        console.log('强制刷新成功，等待1秒后获取最新数据...')
-        refreshText.value = '刷新成功！正在获取最新分析数据...'
+        // 重置代币未找到状态
+        isTokenNotFound.value = false
 
-        // 等待1秒，确保后端数据已更新
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-        try {
-          // 请求普通接口获取最新数据
-          console.log('开始请求普通接口获取最新数据:', currentSymbol.value)
-          const freshData = await getTechnicalAnalysis(currentSymbol.value, false)
-
-          console.log('获取最新数据成功:', JSON.stringify(freshData))
-
-          // 检查数据结构
-          if (freshData && freshData.current_price && freshData.trend_analysis) {
-            // 更新数据
-            analysisData.value = freshData
-            console.log('已更新为最新数据')
-
-            // 检查关键字段
-            console.log('检查关键字段:')
-            console.log('- current_price:', freshData.current_price)
-            console.log('- last_update_time:', freshData.last_update_time)
-            console.log('- trend_analysis存在:', !!freshData.trend_analysis)
-            console.log('- indicators_analysis存在:', !!freshData.indicators_analysis)
-
-            // 确保趋势分析数据更新
-            if (freshData?.trend_analysis?.probabilities) {
-              console.log('更新后的趋势分析数据:', {
-                up: freshData.trend_analysis.probabilities.up,
-                sideways: freshData.trend_analysis.probabilities.sideways,
-                down: freshData.trend_analysis.probabilities.down
-              })
-            } else {
-              console.error('趋势分析数据不存在或格式不正确')
-            }
-          } else {
-            // 如果获取最新数据失败，则使用强制刷新返回的数据
-            console.warn('获取最新数据失败，使用强制刷新返回的数据')
-            analysisData.value = data
-          }
-        } catch (freshError) {
-          console.error('获取最新数据失败:', freshError)
-          // 如果获取最新数据失败，则使用强制刷新返回的数据
-          analysisData.value = data
-        }
+        // 标记分析数据加载完成
+        analysisLoading.value = false
 
         // 确保视图更新
         await nextTick()
-        console.log('视图已更新')
 
-        // 更新价格历史数据并重新初始化图表
-        try {
-          const newPriceHistory = await getPriceHistory(currentSymbol.value)
-          if (newPriceHistory && newPriceHistory.prices && Array.isArray(newPriceHistory.prices)) {
-            priceHistory.value = newPriceHistory
+        // 完成刷新 - 平滑过渡到100%
+        refreshText.value = '数据刷新完成！'
 
-            // 初始化图表
-            if (priceChart.value) {
-              chartLoading.value = true
-              try {
-                initChart()
-              } finally {
-                chartLoading.value = false
-              }
-            }
+        // 从当前进度平滑过渡到100%
+        const currentProgress = refreshProgress.value
+        const startTransition = Date.now()
+        const transitionDuration = 500 // 500毫秒的过渡时间
+
+        const transitionInterval = setInterval(() => {
+          const elapsedMs = Date.now() - startTransition
+          const transitionProgress = Math.min(1, elapsedMs / transitionDuration)
+
+          // 使用缓动函数使过渡更自然
+          const easedProgress = 1 - Math.pow(1 - transitionProgress, 2)
+          const newProgress = currentProgress + (100 - currentProgress) * easedProgress
+
+          refreshProgress.value = newProgress
+
+          if (transitionProgress >= 1) {
+            clearInterval(transitionInterval)
+            refreshProgress.value = 100
+
+            // 延迟关闭弹窗，让用户看到100%的进度
+            setTimeout(() => {
+              showRefreshModal.value = false
+            }, 500)
           }
-        } catch (chartError) {
-          console.error('更新图表失败:', chartError)
-        }
+        }, 16) // 约60fps的更新频率
 
-        // 确认数据已更新
-        console.log('视图数据已更新，当前价格:', formatPrice(analysisData.value?.current_price))
-      } catch (apiError: any) {
-        console.error('API调用失败:', apiError)
+      } catch (refreshError) {
+        console.error('强制刷新失败:', refreshError)
 
-        // 处理各种错误情况
-        if (apiError.message && (
-          apiError.message.includes('Could not establish connection') ||
-          apiError.message.includes('Network Error') ||
-          apiError.message.includes('timeout')
-        )) {
-          error.value = '网络连接错误，请检查您的网络连接并重试'
-        } else if (apiError.message && apiError.message.includes('502')) {
-          // 处理502 Bad Gateway错误
-          console.warn('服务器返回502错误，强制刷新可能需要更多资源，尝试普通请求...')
+        // 更新提示文本
+        refreshText.value = '强制刷新失败，正在尝试获取缓存数据...'
 
-          // 更新提示文本
-          refreshText.value = '强制刷新遇到问题，正在尝试普通请求...'
+        // 设置加载状态
+        analysisLoading.value = true
 
-          // 等待3秒后尝试普通请求
-          try {
-            await new Promise(resolve => setTimeout(resolve, 3000))
+        // 尝试使用普通请求获取数据
+        const regularResponse = await getTechnicalAnalysis(currentSymbol.value, false)
 
-            // 尝试普通请求
-            console.log('尝试普通请求获取数据...')
-            const regularData = await getTechnicalAnalysis(currentSymbol.value, false)
+        // 更新数据
+        analysisData.value = regularResponse
 
-            if (regularData && regularData.current_price && regularData.trend_analysis) {
-              // 更新数据
-              analysisData.value = regularData
-              console.log('普通请求成功获取数据')
+        // 标记分析数据加载完成
+        analysisLoading.value = false
 
-              // 确保视图更新
-              await nextTick()
+        // 确保视图更新
+        await nextTick()
 
-              // 不显示错误
-              error.value = null
+        // 显示友好的提示
+        refreshText.value = '已加载最新缓存数据'
 
-              // 更新提示文本
-              refreshText.value = '数据刷新完成！'
+        // 从当前进度平滑过渡到100%
+        const currentProgress = refreshProgress.value
+        const startTransition = Date.now()
+        const transitionDuration = 500 // 500毫秒的过渡时间
 
-              return
-            }
-          } catch (retryError) {
-            console.error('普通请求也失败:', retryError)
+        const transitionInterval = setInterval(() => {
+          const elapsedMs = Date.now() - startTransition
+          const transitionProgress = Math.min(1, elapsedMs / transitionDuration)
+
+          // 使用缓动函数使过渡更自然
+          const easedProgress = 1 - Math.pow(1 - transitionProgress, 2)
+          const newProgress = currentProgress + (100 - currentProgress) * easedProgress
+
+          refreshProgress.value = newProgress
+
+          if (transitionProgress >= 1) {
+            clearInterval(transitionInterval)
+            refreshProgress.value = 100
+
+            // 延迟关闭弹窗，让用户看到100%的进度
+            setTimeout(() => {
+              showRefreshModal.value = false
+            }, 500)
           }
-
-          // 如果重试失败，显示错误信息
-          error.value = '服务器暂时无法处理请求，可能正在维护或负载过高，请稍后再试'
-        } else if (apiError.message && apiError.message.includes('500')) {
-          // 处理500内部服务器错误
-          error.value = '服务器内部错误，请稍后再试'
-        } else if (apiError.message && apiError.message.includes('504')) {
-          // 处理504 Gateway Timeout错误
-          error.value = '服务器处理请求超时，请稍后再试'
-        } else {
-          error.value = apiError.message || '刷新数据失败'
-        }
-
-        // 即使出错也要关闭进度弹窗
-        if (refreshTimer !== null) {
-          clearInterval(refreshTimer)
-          refreshTimer = null
-        }
-        refreshProgress.value = 100
-
-        // 延迟关闭弹窗
-        setTimeout(() => {
-          showRefreshModal.value = false
-        }, 500)
-
-        return
+        }, 16) // 约60fps的更新频率
       }
-    } else {
-      await loadAnalysisData(true)
+    } catch (err: any) {
+      console.error('数据刷新失败:', err)
+
+      // 显示错误信息
+      if (err.message?.includes('Network Error') || err.message?.includes('timeout')) {
+        error.value = '网络连接错误，请检查您的网络连接并重试'
+      } else {
+        error.value = err.message || '刷新数据失败'
+      }
+
+      // 关闭进度弹窗 - 平滑过渡到100%
+      refreshText.value = '加载失败，请稍后重试'
+
+      // 从当前进度平滑过渡到100%
+      const currentProgress = refreshProgress.value
+      const startTransition = Date.now()
+      const transitionDuration = 500 // 500毫秒的过渡时间
+
+      const transitionInterval = setInterval(() => {
+        const elapsedMs = Date.now() - startTransition
+        const transitionProgress = Math.min(1, elapsedMs / transitionDuration)
+
+        // 使用缓动函数使过渡更自然
+        const easedProgress = 1 - Math.pow(1 - transitionProgress, 2)
+        const newProgress = currentProgress + (100 - currentProgress) * easedProgress
+
+        refreshProgress.value = newProgress
+
+        if (transitionProgress >= 1) {
+          clearInterval(transitionInterval)
+          refreshProgress.value = 100
+
+          // 延迟关闭弹窗，让用户看到100%的进度
+          setTimeout(() => {
+            showRefreshModal.value = false
+          }, 500)
+        }
+      }, 16) // 约60fps的更新频率
     }
-  } catch (e: any) {
+  } catch (e) {
     console.error('强制刷新数据失败:', e)
     error.value = e instanceof Error ? e.message : '刷新数据失败'
   } finally {
-    // 完成刷新，平滑过渡到100%
+    // 确保定时器被清除
     if (refreshTimer !== null) {
       clearInterval(refreshTimer)
       refreshTimer = null
     }
-
-    // 更新提示文本
-    refreshText.value = '数据刷新完成！'
-
-    // 从当前进度平滑过渡到100%
-    const currentProgress = refreshProgress.value
-    const startTransition = Date.now()
-    const transitionDuration = 800 // 800毫秒的过渡时间
-
-    const transitionInterval = setInterval(() => {
-      const elapsedMs = Date.now() - startTransition
-      const transitionProgress = Math.min(1, elapsedMs / transitionDuration)
-
-      // 使用缓动函数使过渡更自然
-      const easedProgress = 1 - Math.pow(1 - transitionProgress, 3)
-      const newProgress = currentProgress + (100 - currentProgress) * easedProgress
-
-      refreshProgress.value = newProgress
-
-      if (transitionProgress >= 1) {
-        clearInterval(transitionInterval)
-        refreshProgress.value = 100
-
-        // 延迟关闭弹窗，让用户看到100%的进度
-        setTimeout(() => {
-          showRefreshModal.value = false
-        }, 500)
-      }
-    }, 16) // 约60fps的更新频率
   }
 }
 
 // 普通刷新数据
 const refreshData = async () => {
-  chartLoading.value = true
+  error.value = null // 清除之前的错误
+  isTokenNotFound.value = false // 重置代币未找到状态
+  analysisLoading.value = true
+
   try {
-    await loadAnalysisData()
-  } finally {
-    chartLoading.value = false
+    // 尝试使用普通请求获取数据
+    console.log('尝试使用普通请求获取数据...')
+    const response = await getTechnicalAnalysis(currentSymbol.value, false)
+
+    // response 已经是 FormattedTechnicalAnalysisData 类型
+    // 直接使用它
+    const formattedData = response
+
+    // 更新数据
+    analysisData.value = formattedData
+    console.log('已更新为最新数据')
+
+    // 标记分析数据加载完成
+    analysisLoading.value = false
+
+    // 检查关键字段
+    console.log('检查关键字段:')
+    console.log('- current_price:', formattedData.current_price)
+    console.log('- last_update_time:', formattedData.last_update_time)
+    console.log('- trend_analysis存在:', !!formattedData.trend_analysis)
+    console.log('- indicators_analysis存在:', !!formattedData.indicators_analysis)
+
+    // 确保趋势分析数据更新
+    if (formattedData.trend_analysis?.probabilities) {
+      console.log('更新后的趋势分析数据:', {
+        up: formattedData.trend_analysis.probabilities.up,
+        sideways: formattedData.trend_analysis.probabilities.sideways,
+        down: formattedData.trend_analysis.probabilities.down
+      })
+    } else {
+      console.error('趋势分析数据不存在或格式不正确')
+    }
+
+    // 确保视图更新
+    await nextTick()
+
+  } catch (err: any) {
+    console.error('普通请求失败:', err)
+
+    // 重置加载状态
+    analysisLoading.value = false
+
+    // 检查是否是404错误（代币未找到）
+    if (err.response?.status === 404) {
+      console.log('代币未找到，显示特殊提示')
+      isTokenNotFound.value = true
+      error.value = null // 清除一般错误，使用特殊的未找到视图
+    } else {
+      error.value = err.message || '刷新数据失败'
+    }
   }
 }
+
+// 分享到推特
+const shareToTwitter = () => {
+  try {
+    // 构建分享文本
+    const symbol = currentSymbol.value || 'CRYPTO'
+    const price = formatPrice(analysisData.value?.current_price || 0)
+
+    // 获取概率值并确保它们是有效的百分比
+    let upProb = analysisData.value?.trend_analysis?.probabilities?.up
+    let downProb = analysisData.value?.trend_analysis?.probabilities?.down
+
+    // 检查概率值是否有效，如果无效则使用默认值
+    upProb = typeof upProb === 'number' && upProb >= 0 && upProb <= 1 ? upProb : 0.33
+    downProb = typeof downProb === 'number' && downProb >= 0 && downProb <= 1 ? downProb : 0.33
+
+    // 转换为百分比
+    const upProbPercent = Math.round(upProb * 100)
+    const downProbPercent = Math.round(downProb * 100)
+
+    // 获取趋势分析摘要
+    const trendSummary = analysisData.value?.trend_analysis?.summary || '无趋势分析'
+
+    // 获取交易建议
+    const tradingAction = analysisData.value?.trading_advice?.action || '无交易建议'
+    const tradingReason = analysisData.value?.trading_advice?.reason || ''
+    const entryPrice = formatPrice(analysisData.value?.trading_advice?.entry_price)
+    const stopLoss = formatPrice(analysisData.value?.trading_advice?.stop_loss)
+    const takeProfit = formatPrice(analysisData.value?.trading_advice?.take_profit)
+
+    // 获取风险评估
+    const riskLevel = analysisData.value?.risk_assessment?.level || '中'
+    const riskScore = analysisData.value?.risk_assessment?.score || 50
+    const riskDetails = analysisData.value?.risk_assessment?.details || []
+
+    // 构建分享文本
+    let shareText = `${symbol}市场分析报告 - 当前价格: ${price} USD
+
+本报告来源 - K线军师
+
+市场趋势分析:
+${trendSummary.substring(0, 100)}${trendSummary.length > 100 ? '...' : ''}
+
+交易建议:
+操作: ${tradingAction}
+入场价: ${entryPrice}
+止损价: ${stopLoss}
+目标价: ${takeProfit}
+原因: ${tradingReason.substring(0, 80)}${tradingReason.length > 80 ? '...' : ''}
+
+风险评估:
+风险等级: ${riskLevel}
+风险评分: ${riskScore}/100
+${riskDetails.length > 0 ? '主要风险因素:\n' + riskDetails.slice(0, 2).map(detail => `- ${detail}`).join('\n') : ''}
+
+#加密货币 #技术分析 #交易建议`
+
+    // 检查字符长度，如果超过270个字符，则进行裁剪
+    if (shareText.length > 270) {
+      console.log('分享文本过长，进行裁剪。原长度:', shareText.length)
+
+      // 简化版本，保留核心信息
+      shareText = `${symbol}市场分析报告 - 当前价格: ${price} USD
+
+市场趋势:
+${trendSummary.substring(0, 50)}${trendSummary.length > 50 ? '...' : ''}
+
+交易建议:
+操作: ${tradingAction}
+入场价: ${entryPrice}
+止损价: ${stopLoss}
+目标价: ${takeProfit}
+
+风险评估:
+风险等级: ${riskLevel}
+风险评分: ${riskScore}/100
+
+#加密货币 #技术分析 #交易建议`
+    }
+
+    // 打印最终分享文本，用于调试
+    console.log('最终分享文本:', shareText)
+    console.log('分享文本长度:', shareText.length)
+
+    // 构建Twitter分享URL
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`
+
+    // 在新窗口中打开Twitter分享页面
+    window.open(twitterUrl, '_blank')
+
+    console.log('已打开Twitter分享页面')
+  } catch (error) {
+    console.error('分享到Twitter失败:', error)
+  }
+}
+
+// 保存图表为图片
+const saveChartImage = async () => {
+  try {
+    // 创建一个容器用于生成图片
+    const container = document.createElement('div')
+    container.style.width = '375px'
+    container.style.padding = '20px'
+    container.style.backgroundColor = '#0F172A'
+    container.style.color = '#fff'
+    container.style.fontFamily = 'system-ui, -apple-system, sans-serif'
+    container.style.position = 'fixed'
+    container.style.left = '-9999px'
+    container.style.top = '0'
+    container.style.zIndex = '-1'
+
+    // 标题和当前价格卡片
+    const titleSection = document.createElement('div')
+    titleSection.style.textAlign = 'center'
+    titleSection.style.marginBottom = '20px'
+    titleSection.style.padding = '20px 0 10px 0'
+    titleSection.style.background = 'linear-gradient(to bottom, #1e293b99 60%, #0f172a99 100%)'
+    titleSection.style.borderRadius = '16px'
+    titleSection.style.boxShadow = '0 2px 8px 0 #0002'
+    titleSection.innerHTML = `
+      <h2 style="font-size: 22px; margin-bottom: 10px; font-weight: 600; letter-spacing: 1px;">${currentSymbol.value} Market Analysis</h2>
+      <div style="font-size: 32px; font-weight: bold; margin-bottom: 4px;">
+        ${formatPrice(analysisData.value?.current_price)} <span style='font-size:16px;color:#9ca3af'>USD</span>
+      </div>
+    `
+    container.appendChild(titleSection)
+
+    // 市场趋势分析卡片
+    if (analysisData.value?.trend_analysis?.summary) {
+      const trendSection = document.createElement('div')
+      trendSection.style.margin = '20px 0 0 0'
+      trendSection.style.padding = '16px'
+      trendSection.style.background = 'rgba(31,41,55,0.3)'
+      trendSection.style.border = '1px solid #374151'
+      trendSection.style.borderRadius = '12px'
+      trendSection.style.boxShadow = '0 1px 4px 0 #0001'
+      trendSection.innerHTML = `
+        <div style="font-size: 16px; font-weight: 500; margin-bottom: 8px;">Market Trend Analysis</div>
+        <div style="font-size: 14px; color: #d1d5db; line-height: 1.6;">${analysisData.value.trend_analysis.summary}</div>
+      `
+      container.appendChild(trendSection)
+    }
+
+    // 技术指标卡片
+    if (analysisData.value?.indicators_analysis) {
+      const indicatorsSection = document.createElement('div')
+      indicatorsSection.style.margin = '20px 0 0 0'
+      indicatorsSection.style.padding = '16px'
+      indicatorsSection.style.background = 'rgba(31,41,55,0.3)'
+      indicatorsSection.style.border = '1px solid #374151'
+      indicatorsSection.style.borderRadius = '12px'
+      indicatorsSection.style.boxShadow = '0 1px 4px 0 #0001'
+      indicatorsSection.innerHTML = `
+        <div style="font-size: 16px; font-weight: 500; margin-bottom: 10px;">Technical Indicators</div>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+          ${Object.entries(analysisData.value.indicators_analysis)
+            .filter(([key]) => !['MACD', 'BollingerBands', 'DMI'].includes(key))
+            .map(([key, indicator]) => `
+              <div style="padding: 10px; background: rgba(17,24,39,0.5); border: 1px solid #334155; border-radius: 8px;">
+                <div style="font-size: 12px; color: #9ca3af; margin-bottom: 5px;">${key}</div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 14px;">${typeof indicator.value === 'number' ? indicator.value.toFixed(2) : indicator.value}</span>
+                  <span style="font-size: 12px; ${getIndicatorStyle(indicator.support_trend)}">${getIndicatorText(indicator.support_trend)}</span>
+                </div>
+              </div>
+            `).join('')}
+        </div>
+      `
+      container.appendChild(indicatorsSection)
+    }
+
+    // 交易建议卡片
+    if (analysisData.value?.trading_advice) {
+      const advice = analysisData.value.trading_advice
+      const adviceSection = document.createElement('div')
+      adviceSection.style.margin = '20px 0 0 0'
+      adviceSection.style.padding = '16px'
+      adviceSection.style.background = 'rgba(31,41,55,0.3)'
+      adviceSection.style.border = '1px solid #374151'
+      adviceSection.style.borderRadius = '12px'
+      adviceSection.style.boxShadow = '0 1px 4px 0 #0001'
+      adviceSection.innerHTML = `
+        <div style="font-size: 16px; font-weight: 500; margin-bottom: 10px;">Trading Advice</div>
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px;">
+          <div><span style='color:#9ca3af'>Action:</span> <span style='font-weight:500;'>${advice.action}</span></div>
+          <div><span style='color:#9ca3af'>Entry Price:</span> ${formatPrice(advice.entry_price)}</div>
+          <div><span style='color:#9ca3af'>Stop Loss:</span> <span style='color:#ef4444'>${formatPrice(advice.stop_loss)}</span></div>
+          <div><span style='color:#9ca3af'>Take Profit:</span> <span style='color:#4ade80'>${formatPrice(advice.take_profit)}</span></div>
+          <div><span style='color:#9ca3af'>Reason:</span> ${advice.reason}</div>
+        </div>
+      `
+      container.appendChild(adviceSection)
+    }
+
+    // 风险评估卡片
+    if (analysisData.value?.risk_assessment) {
+      const risk = analysisData.value.risk_assessment
+      const riskSection = document.createElement('div')
+      riskSection.style.margin = '20px 0 0 0'
+      riskSection.style.padding = '16px'
+      riskSection.style.background = 'rgba(31,41,55,0.3)'
+      riskSection.style.border = '1px solid #374151'
+      riskSection.style.borderRadius = '12px'
+      riskSection.style.boxShadow = '0 1px 4px 0 #0001'
+      riskSection.innerHTML = `
+        <div style="font-size: 16px; font-weight: 500; margin-bottom: 10px;">Risk Assessment</div>
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px;">
+          <div><span style='color:#9ca3af'>Level:</span> <span style='font-weight:500;'>${risk.level}</span></div>
+          <div><span style='color:#9ca3af'>Score:</span> ${risk.score}/100</div>
+          ${risk.details && risk.details.length > 0 ? `<div><span style='color:#9ca3af'>Factors:</span><ul style='margin:0 0 0 18px;padding:0;color:#d1d5db;'>${risk.details.map((d:any) => `<li>${d}</li>`).join('')}</ul></div>` : ''}
+        </div>
+      `
+      container.appendChild(riskSection)
+    }
+
+    // 二维码卡片（居中+描述+网址）
+    const qrDiv = document.createElement('div')
+    qrDiv.style.textAlign = 'center'
+    qrDiv.style.margin = '32px 0 0 0'
+    qrDiv.style.padding = '16px 0 0 0'
+    qrDiv.style.display = 'flex'
+    qrDiv.style.flexDirection = 'column'
+    qrDiv.style.alignItems = 'center'
+
+    qrDiv.innerHTML = `
+      <div style="margin-bottom: 8px; font-size: 15px; color: #38bdf8; font-weight: 600;">K线军师</div>
+      <div style="margin-bottom: 10px; font-size: 13px; color: #9ca3af; max-width: 320px;">
+        智能加密行情分析与交易决策平台，助你高效洞察市场趋势，科学制定交易策略。
+      </div>
+    `
+    const qrCanvas = document.createElement('canvas')
+    qrDiv.appendChild(qrCanvas)
+    const urlDiv = document.createElement('div')
+    urlDiv.style.marginTop = '10px'
+    urlDiv.style.fontSize = '14px'
+    urlDiv.style.color = '#60a5fa'
+    urlDiv.style.fontWeight = 'bold'
+    urlDiv.innerText = 'https://www.kxianjunshi.com'
+    qrDiv.appendChild(qrCanvas)
+    container.appendChild(qrDiv)
+
+    // 1. 先插入到页面
+    document.body.appendChild(container)
+
+    // 2. 生成二维码
+    await QRCode.toCanvas(qrCanvas, 'https://www.kxianjunshi.com', { width: 100, margin: 1 })
+
+    // 3. 生成图片
+    const canvas = await html2canvas(container, {
+      backgroundColor: '#0F172A',
+      scale: 2,
+      logging: false,
+      width: 375,
+      height: container.offsetHeight
+    })
+
+    // 4. 移除临时节点
+    document.body.removeChild(container)
+
+    // 5. 下载图片
+    const link = document.createElement('a')
+    link.download = `${currentSymbol.value}_market_analysis.png`
+    link.href = canvas.toDataURL('image/png')
+    link.click()
+  } catch (error) {
+    console.error('保存图片失败:', error)
+  }
+}
+
+// 获取指标样式
+const getIndicatorStyle = (trend?: string) => {
+  if (!trend) return 'color: #9ca3af;'
+  if (trend === 'bullish' || trend === '看涨' || trend === '支持当前趋势') return 'color: #4ade80;'
+  if (trend === 'bearish' || trend === '看跌' || trend === '不支持当前趋势') return 'color: #ef4444;'
+  if (trend === 'neutral' || trend === '中性') return 'color: #fbbf24;'
+  return 'color: #9ca3af;'
+}
+
 </script>
+
+<style scoped>
+/* 淡入淡出过渡效果 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

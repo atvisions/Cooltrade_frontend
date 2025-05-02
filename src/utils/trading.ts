@@ -38,42 +38,55 @@ const exchanges: ExchangeInfo[] = [
   }
 ];
 
-export function parseSymbolFromUrl(url: string): string | null {
+/**
+ * 从交易所URL中解析交易对符号
+ * @param url 交易所URL
+ * @returns 交易对符号，例如 'BTCUSDT'
+ */
+export const parseSymbolFromUrl = (url: string): string | null => {
   try {
-    const urlObj = new URL(url);
-    
-    // 查找匹配的交易所
-    const exchange = exchanges.find(ex => urlObj.hostname.includes(ex.baseUrl));
-    if (!exchange) {
-      console.log('不支持的交易所:', urlObj.hostname);
-      return null;
-    }
-
-    // 检查是否是交易页面
-    const isTradeUrl = exchange.tradeUrlPatterns.some(pattern => 
-      urlObj.pathname.includes(pattern)
-    );
-    if (!isTradeUrl) {
-      console.log('不是交易页面:', urlObj.pathname);
-      return null;
-    }
-
-    // 尝试所有可能的正则表达式来匹配交易对
-    for (const regex of exchange.symbolRegexes) {
-      const match = urlObj.pathname.match(regex);
-      if (match && match[1]) {
-        // 统一转换为大写并添加 USDT 后缀
-        const symbol = `${match[1].toUpperCase()}USDT`;
-        console.log('解析到交易对:', symbol);
-        return symbol;
+    // Gate.io
+    if (url.includes('gate.io')) {
+      const matches = url.match(/\/(?:zh\/)?trade\/([A-Z0-9]+)_([A-Z0-9]+)/i);
+      if (matches && matches[1] && matches[2]) {
+        return `${matches[1]}${matches[2]}`;
       }
+      return null;
     }
 
-    console.log('未能从 URL 解析出交易对:', url);
-    return null;
-  } catch (error) {
-    console.error('解析 URL 时出错:', error);
-    return null;
+    // 币安
+    if (url.includes('binance.com')) {
+      // 提取交易对部分
+      if (url.includes('/trade/')) {
+        const symbol = url.split('/trade/')[1].split('_')[0].toUpperCase()
+        // 如果不包含USDT后缀，添加它
+        if (!symbol.endsWith('USDT')) {
+          return `${symbol}USDT`
+        }
+        return symbol
+      }
+      return null
+    }
+    
+    // OKX
+    if (url.includes('okx.com')) {
+      // 提取交易对部分
+      if (url.includes('/trade-spot/')) {
+        const pairs = url.split('/trade-spot/')[1].split('?')[0].split('-')
+        if (pairs.length === 2) {
+          const [base, quote] = pairs
+          // 将 USD 转换为 USDT
+          const quoteSymbol = quote.toUpperCase() === 'USD' ? 'USDT' : quote.toUpperCase()
+          return `${base.toUpperCase()}${quoteSymbol}`
+        }
+      }
+      return null
+    }
+
+    return null
+  } catch (e) {
+    console.error('解析交易对符号失败:', e)
+    return null
   }
 }
 

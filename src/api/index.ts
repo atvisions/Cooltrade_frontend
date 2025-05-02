@@ -1,6 +1,13 @@
 /// <reference types="chrome"/>
 
 import axios from 'axios'
+import type {
+  TechnicalAnalysisResponse,
+  ForceRefreshResponse,
+  FormattedTechnicalAnalysisData,
+  BaseApiResponse
+} from '@/types/technical-analysis'
+import { formatTechnicalAnalysisData } from '@/utils/data-formatter'
 
 // 检查是否在扩展环境中
 const isExtensionEnvironment = (): boolean => {
@@ -31,7 +38,7 @@ const getBaseUrl = (): string => {
 // 创建axios实例
 const api = axios.create({
   baseURL: getBaseUrl(),
-  timeout: 15000,
+  timeout: 30000, // 增加超时时间到30秒
   headers: {
     'Content-Type': 'application/json'
   }
@@ -40,6 +47,7 @@ const api = axios.create({
 // 重试配置
 const MAX_RETRIES = 3
 const RETRY_DELAY = 2000 // 2秒
+const FORCE_REFRESH_TIMEOUT = 60000 // 强制刷新超时时间60秒
 
 // 请求限制配置
 const MAX_REQUESTS_PER_MINUTE = 30
@@ -134,6 +142,11 @@ const retryRequest = async (config: any, retryCount: number = 0): Promise<any> =
     config.headers['Cache-Control'] = 'no-cache'
     config.headers['Pragma'] = 'no-cache'
 
+    // 如果是强制刷新请求，使用更长的超时时间
+    if (config.params?.force_refresh) {
+      config.timeout = FORCE_REFRESH_TIMEOUT
+    }
+
     const response = await axios(config)
     return response
   } catch (error: any) {
@@ -158,23 +171,17 @@ const retryRequest = async (config: any, retryCount: number = 0): Promise<any> =
       return Promise.reject(error)
     }
 
-    if (error.code === 'ERR_NETWORK') {
-      console.error('网络连接错误:', error)
-      if (retryCount < MAX_RETRIES) {
-        const delay = RETRY_DELAY * Math.pow(2, retryCount)
-        console.log(`网络错误，${delay/1000}秒后重试(${retryCount + 1}/${MAX_RETRIES})`)
-        await new Promise(resolve => setTimeout(resolve, delay))
-        return retryRequest(config, retryCount + 1)
-      }
-    }
+    // 如果是强制刷新请求，增加重试次数
+    const maxRetries = config.params?.force_refresh ? MAX_RETRIES * 2 : MAX_RETRIES
 
-    if (retryCount < MAX_RETRIES && (
+    if (retryCount < maxRetries && (
+      error.code === 'ERR_NETWORK' ||
       error.code === 'ERR_FILE_NOT_FOUND' ||
       error.code === 'ECONNABORTED' ||
       error.response?.status === 500
     )) {
       const delay = RETRY_DELAY * Math.pow(2, retryCount)
-      console.log(`请求失败，${delay/1000}秒后重试(${retryCount + 1}/${MAX_RETRIES})`)
+      console.log(`请求失败，${delay/1000}秒后重试(${retryCount + 1}/${maxRetries})`)
       await new Promise(resolve => setTimeout(resolve, delay))
       return retryRequest(config, retryCount + 1)
     }
@@ -439,80 +446,40 @@ export interface TechnicalAnalysisData {
   last_update_time: string;
 }
 
-// 价格历史数据接口返回类型
-export interface PriceHistoryData {
-  symbol: string;
-  interval: string;
-  period: string;
-  prices: {
-    timestamp: number;
-    price: number;
-  }[];
-  change_percent: number;
-  high: number;
-  low: number;
+// 类型守卫：检查是否是基础API响应
+function isBaseApiResponse(response: unknown): response is BaseApiResponse {
+  return (
+    typeof response === 'object' &&
+    response !== null &&
+    'status' in response &&
+    typeof (response as BaseApiResponse).status === 'string'
+  )
 }
 
+
+
 // 获取技术分析数据
-export const getTechnicalAnalysis = async (symbol: string, forceRefresh: boolean = false): Promise<TechnicalAnalysisData> => {
+export const getTechnicalAnalysis = async (
+  symbol: string,
+  forceRefresh: boolean = false
+): Promise<FormattedTechnicalAnalysisData> => {
   try {
-    const params = forceRefresh ? { force_refresh: true } : {}
-    const response = await api.get(`/crypto/technical-indicators/${symbol}/`, { params })
+    const url = forceRefresh
+      ? `/crypto/technical-indicators/${symbol}/?force_refresh=true`
+      : `/crypto/technical-indicators/${symbol}/`
 
-    // 打印完整的响应数据以便调试
-    console.log('技术分析原始响应:', JSON.stringify(response, null, 2))
-
-    // 验证响应数据结构
-    const responseData = response as any
-
-    // 检查是否是API包装的响应格式
-    if (responseData && typeof responseData === 'object') {
-      if (responseData.status === 'success' && responseData.data) {
-        // 返回data部分
-        return responseData.data as TechnicalAnalysisData
-      } else if (responseData.trend_analysis && responseData.current_price) {
-        // 直接返回响应
-        return responseData as TechnicalAnalysisData
-      }
-    }
-
-    console.error('技术分析数据格式不正确:', responseData)
-    throw new Error('数据格式不完整')
+    const response = await api.get<TechnicalAnalysisResponse | ForceRefreshResponse>(url)
+    return formatTechnicalAnalysisData(response)
   } catch (error) {
     console.error('获取技术分析数据失败:', error)
     throw error
   }
 }
 
-// 获取价格历史数据
-export const getPriceHistory = async (symbol: string): Promise<PriceHistoryData> => {
-  try {
-    const response = await api.get(`/crypto/price-history/${symbol}/`)
 
-    // 打印完整的响应数据以便调试
-    console.log('价格历史原始响应:', JSON.stringify(response, null, 2))
 
-    const responseData = response as any
 
-    // 检查是否是API包装的响应格式
-    if (responseData && typeof responseData === 'object') {
-      if (responseData.status === 'success' && responseData.data) {
-        // 检查data部分是否包含prices数组
-        if (responseData.data.prices && Array.isArray(responseData.data.prices)) {
-          return responseData.data as PriceHistoryData
-        }
-      } else if (responseData.prices && Array.isArray(responseData.prices)) {
-        // 直接返回响应
-        return responseData as PriceHistoryData
-      }
-    }
 
-    console.error('价格历史数据格式不正确:', responseData)
-    throw new Error('数据格式不完整')
-  } catch (error) {
-    console.error('获取价格历史数据失败:', error)
-    throw error
-  }
-}
+
 
 export default api
