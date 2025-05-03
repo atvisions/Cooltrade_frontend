@@ -8,6 +8,7 @@ import type {
   BaseApiResponse
 } from '@/types/technical-analysis'
 import { formatTechnicalAnalysisData } from '@/utils/data-formatter'
+import { proxyRequest, isExtensionEnvironment as isExtension } from './proxy'
 
 // 检查是否在扩展环境中
 const isExtensionEnvironment = (): boolean => {
@@ -147,7 +148,15 @@ const retryRequest = async (config: any, retryCount: number = 0): Promise<any> =
       config.timeout = FORCE_REFRESH_TIMEOUT
     }
 
-    const response = await axios(config)
+    // 在扩展环境中使用代理请求
+    let response;
+    if (isExtension()) {
+      console.log('使用代理发送请求:', config.url)
+      response = await proxyRequest(config)
+    } else {
+      response = await axios(config)
+    }
+
     return response
   } catch (error: any) {
     // 处理文件访问错误
@@ -468,7 +477,38 @@ export const getTechnicalAnalysis = async (
       ? `/crypto/technical-indicators/${symbol}/?force_refresh=true`
       : `/crypto/technical-indicators/${symbol}/`
 
-    const response = await api.get<TechnicalAnalysisResponse | ForceRefreshResponse>(url)
+    let response;
+    if (isExtension()) {
+      // 在扩展环境中使用代理
+      const fullUrl = getBaseUrl() + url;
+      console.log('使用代理获取技术分析数据:', fullUrl);
+
+      // 准备请求配置
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
+      };
+
+      // 添加认证头
+      const token = localStorage.getItem('token');
+      if (token) {
+        headers.Authorization = token;
+      }
+
+      const config = {
+        url: fullUrl,
+        method: 'GET',
+        headers
+      };
+
+      // 使用代理发送请求
+      const proxyResponse = await proxyRequest(config);
+      response = proxyResponse.data;
+    } else {
+      // 在非扩展环境中使用普通请求
+      response = await api.get<TechnicalAnalysisResponse | ForceRefreshResponse>(url);
+    }
+
     return formatTechnicalAnalysisData(response)
   } catch (error) {
     console.error('获取技术分析数据失败:', error)

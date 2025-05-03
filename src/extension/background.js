@@ -16,6 +16,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       console.error('获取资源URL失败:', error)
       sendResponse({ status: 'error', error: error.message })
     }
+  } else if (message.type === 'PROXY_API_REQUEST') {
+    // 处理API代理请求
+    handleApiProxyRequest(message.data, sendResponse)
+    return true // 保持连接打开，等待异步响应
   }
   return true
 })
@@ -31,16 +35,16 @@ const rateLimits = {
 function checkRateLimit(tabId) {
   const now = Date.now();
   const requests = rateLimits.requests.get(tabId) || [];
-  
+
   // 清理过期的请求记录
   const validRequests = requests.filter(time => now - time < rateLimits.timeWindow);
-  
+
   if (validRequests.length >= rateLimits.maxRequests) {
     const oldestRequest = validRequests[0];
     const waitTime = (rateLimits.timeWindow - (now - oldestRequest)) / 1000;
     throw new Error(`请求过于频繁，请等待 ${waitTime.toFixed(2)} 秒`);
   }
-  
+
   // 更新请求记录
   validRequests.push(now);
   rateLimits.requests.set(tabId, validRequests);
@@ -134,6 +138,61 @@ chrome.runtime.onInstalled.addListener((details) => {
   }
 })
 
+// 处理API代理请求
+async function handleApiProxyRequest(data, sendResponse) {
+  try {
+    const { url, method, headers, body } = data;
+    console.log(`处理API代理请求: ${method} ${url}`);
+
+    // 构建请求选项
+    const options = {
+      method: method || 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers
+      }
+    };
+
+    // 添加请求体（如果有）
+    if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+      options.body = JSON.stringify(body);
+    }
+
+    // 发送请求
+    const response = await fetch(url, options);
+
+    // 获取响应头
+    const responseHeaders = {};
+    response.headers.forEach((value, key) => {
+      responseHeaders[key] = value;
+    });
+
+    // 获取响应体
+    const responseText = await response.text();
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch (e) {
+      responseData = responseText;
+    }
+
+    // 发送响应回去
+    sendResponse({
+      status: response.status,
+      statusText: response.statusText,
+      headers: responseHeaders,
+      data: responseData,
+      success: response.ok
+    });
+  } catch (error) {
+    console.error('API代理请求失败:', error);
+    sendResponse({
+      success: false,
+      error: error.message || '请求失败'
+    });
+  }
+}
+
 // 监听标签页更新
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && tab.url) {
@@ -142,7 +201,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       chrome.tabs.sendMessage(tabId, {
         type: 'PAGE_UPDATED',
         data: { url: tab.url }
-      }, (response) => {
+      }, () => {
         if (chrome.runtime.lastError) {
           // content script 可能尚未加载，这是正常的
           return;
