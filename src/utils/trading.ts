@@ -35,6 +35,150 @@ const exchanges: ExchangeInfo[] = [
       /\/trade\/([A-Z0-9]+)-USDT/i,
       /\/spot\/([A-Z0-9]+)-USDT/i
     ]
+  },
+  {
+    name: 'HTX',
+    baseUrl: 'htx.com',
+    tradeUrlPatterns: ['/trade/'],
+    symbolRegexes: [
+      /\/trade\/([a-zA-Z0-9]+)_([a-zA-Z0-9]+)/i
+    ]
+  },
+  {
+    name: 'Bybit',
+    baseUrl: 'bybit.com',
+    tradeUrlPatterns: ['/trade/usdt/'],
+    symbolRegexes: [
+      /\/trade\/usdt\/([A-Z0-9]+)/i
+    ]
+  },
+  {
+    name: 'Bitmart',
+    baseUrl: 'bitmart.com',
+    tradeUrlPatterns: ['/trade/en'],
+    symbolRegexes: [
+      /\/trade\/en\?symbol=([A-Z0-9_]+)/i
+    ]
+  },
+  {
+    name: 'Coinbase',
+    baseUrl: 'coinbase.com',
+    tradeUrlPatterns: ['/trade/'],
+    symbolRegexes: [
+      /\/trade\/([A-Z0-9-]+)/i
+    ]
+  },
+  {
+    name: 'Bitstamp',
+    baseUrl: 'bitstamp.net',
+    tradeUrlPatterns: ['/markets/'],
+    symbolRegexes: [
+      /\/markets\/([a-z0-9]+)\/([a-z0-9]+)/i
+    ]
+  },
+  {
+    name: 'Kucoin',
+    baseUrl: 'kucoin.com',
+    tradeUrlPatterns: ['/trade/'],
+    symbolRegexes: [
+      /\/trade\/(\w+)-(\w+)/i
+    ]
+  },
+  {
+    name: 'Poloniex',
+    baseUrl: 'poloniex.com',
+    tradeUrlPatterns: ['/spot/'],
+    symbolRegexes: [
+      /\/spot\/([A-Z0-9_]+)/i
+    ]
+  },
+  {
+    name: 'Bithumb',
+    baseUrl: 'bithumb.com',
+    tradeUrlPatterns: ['/trade/'],
+    symbolRegexes: [
+      /\/trade\/([A-Z0-9_]+)/i
+    ]
+  },
+  {
+    name: 'Upbit',
+    baseUrl: 'upbit.com',
+    tradeUrlPatterns: ['/trade/'],
+    symbolRegexes: [
+      /\/trade\?code=CRIX.UPBIT.([A-Z0-9]+)-([A-Z0-9]+)/i
+    ]
+  },
+  {
+    name: 'Bitflyer',
+    baseUrl: 'bitflyer.com',
+    tradeUrlPatterns: ['/trade/'],
+    symbolRegexes: [
+      /\/trade\/([A-Z0-9_]+)/i
+    ]
+  },
+  {
+    name: 'Gemini',
+    baseUrl: 'gemini.com',
+    tradeUrlPatterns: ['/trade/'],
+    symbolRegexes: [
+      /\/trade\/([A-Z0-9]+)[-_/]([A-Z0-9]+)/i
+    ]
+  },
+  {
+    name: 'LBank',
+    baseUrl: 'lbank.com',
+    tradeUrlPatterns: ['/trade/'],
+    symbolRegexes: [
+      /\/trade\/([A-Z0-9_]+)/i
+    ]
+  },
+  {
+    name: 'Phemex',
+    baseUrl: 'phemex.com',
+    tradeUrlPatterns: ['/spot/trade'],
+    symbolRegexes: [
+      /\/spot\/trade\?symbol=([A-Z0-9_]+)/i
+    ]
+  },
+  {
+    name: 'MEXC',
+    baseUrl: 'mexc.com',
+    tradeUrlPatterns: ['/exchange/'],
+    symbolRegexes: [
+      /\/exchange\/([A-Z0-9_]+)/i
+    ]
+  },
+  {
+    name: 'Bitget',
+    baseUrl: 'bitget.com',
+    tradeUrlPatterns: ['/spot/'],
+    symbolRegexes: [
+      /\/spot\/([A-Z0-9_]+)/i
+    ]
+  },
+  {
+    name: 'Bitfinex',
+    baseUrl: 'bitfinex.com',
+    tradeUrlPatterns: ['/t/'],
+    symbolRegexes: [
+      /\/t\/([A-Z0-9:]+)/i
+    ]
+  },
+  {
+    name: 'Kraken',
+    baseUrl: 'kraken.com',
+    tradeUrlPatterns: ['/trade/'],
+    symbolRegexes: [
+      /\/trade\/([A-Z0-9]+)-([A-Z0-9]+)/i
+    ]
+  },
+  {
+    name: 'Huobi',
+    baseUrl: 'huobi.com',
+    tradeUrlPatterns: ['/en-us/exchange/'],
+    symbolRegexes: [
+      /\/exchange\/([a-z0-9]+)\/\?type=spot/i
+    ]
   }
 ];
 
@@ -45,45 +189,18 @@ const exchanges: ExchangeInfo[] = [
  */
 export const parseSymbolFromUrl = (url: string): string | null => {
   try {
-    // Gate.io
-    if (url.includes('gate.io')) {
-      const matches = url.match(/\/(?:zh\/)?trade\/([A-Z0-9]+)_([A-Z0-9]+)/i);
-      if (matches && matches[1] && matches[2]) {
-        return `${matches[1]}${matches[2]}`;
-      }
-      return null;
-    }
-
-    // 币安
-    if (url.includes('binance.com')) {
-      // 提取交易对部分
-      if (url.includes('/trade/')) {
-        const symbol = url.split('/trade/')[1].split('_')[0].toUpperCase()
-        // 如果不包含USDT后缀，添加它
-        if (!symbol.endsWith('USDT')) {
-          return `${symbol}USDT`
-        }
-        return symbol
-      }
-      return null
-    }
-    
-    // OKX
-    if (url.includes('okx.com')) {
-      // 提取交易对部分
-      if (url.includes('/trade-spot/')) {
-        const pairs = url.split('/trade-spot/')[1].split('?')[0].split('-')
-        if (pairs.length === 2) {
-          const [base, quote] = pairs
-          // 将 USD 转换为 USDT
-          const quoteSymbol = quote.toUpperCase() === 'USD' ? 'USDT' : quote.toUpperCase()
-          return `${base.toUpperCase()}${quoteSymbol}`
+    for (const ex of exchanges) {
+      if (url.includes(ex.baseUrl)) {
+        for (const regex of ex.symbolRegexes) {
+          const matches = url.match(regex);
+          if (matches) {
+            // 合并所有捕获组为 symbol
+            return matches.slice(1).map(s => s.toUpperCase()).join('');
+          }
         }
       }
-      return null
     }
-
-    return null
+    return null;
   } catch (e) {
     console.error('解析交易对符号失败:', e)
     return null

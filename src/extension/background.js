@@ -102,7 +102,18 @@ function isSupportedExchange(url) {
     'mexc.com',
     'bitget.com',
     'bitfinex.com',
-    'kraken.com'
+    'kraken.com',
+    'htx.com',
+    'bitmart.com',
+    'coinbase.com',
+    'bitstamp.net',
+    'poloniex.com',
+    'bithumb.com',
+    'upbit.com',
+    'bitflyer.com',
+    'gemini.com',
+    'lbank.com',
+    'phemex.com'
   ];
   return exchanges.some(exchange => url.includes(exchange));
 }
@@ -111,26 +122,7 @@ function isSupportedExchange(url) {
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
     console.log('扩展已安装')
-    // 设置 CSP
-    chrome.declarativeNetRequest.updateDynamicRules({
-      removeRuleIds: [1],
-      addRules: [{
-        id: 1,
-        priority: 1,
-        action: {
-          type: 'modifyHeaders',
-          responseHeaders: [{
-            header: 'content-security-policy',
-            operation: 'set',
-            value: "default-src 'self' https://www.kxianjunshi.com wss://stream.binance.com; connect-src 'self' https://www.kxianjunshi.com wss://stream.binance.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';"
-          }]
-        },
-        condition: {
-          urlFilter: '*',
-          resourceTypes: ['main_frame', 'sub_frame', 'stylesheet', 'script', 'image', 'font', 'object', 'xmlhttprequest', 'ping', 'csp_report', 'media', 'websocket', 'webtransport', 'webbundle']
-        }
-      }]
-    });
+    // 不再设置 CSP 规则
   } else if (details.reason === 'update') {
     console.log('扩展已更新')
     // 清理旧的缓存
@@ -142,13 +134,15 @@ chrome.runtime.onInstalled.addListener((details) => {
 async function handleApiProxyRequest(data, sendResponse) {
   try {
     const { url, method, headers, body } = data;
-    console.log(`处理API代理请求: ${method} ${url}`);
+    // 检查是否是强制刷新请求
+    const isForceRefresh = url.includes('force_refresh=true');
 
     // 构建请求选项
     const options = {
       method: method || 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         ...headers
       }
     };
@@ -158,8 +152,19 @@ async function handleApiProxyRequest(data, sendResponse) {
       options.body = JSON.stringify(body);
     }
 
-    // 发送请求
-    const response = await fetch(url, options);
+    // 设置超时
+    const timeout = isForceRefresh ? 120000 : 30000; // 强制刷新使用更长的超时时间
+
+    // 创建超时Promise
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`请求超时 (${timeout/1000}秒)`)), timeout);
+    });
+
+    // 创建fetch Promise
+    const fetchPromise = fetch(url, options);
+
+    // 使用Promise.race竞争，谁先完成就用谁的结果
+    const response = await Promise.race([fetchPromise, timeoutPromise]);
 
     // 获取响应头
     const responseHeaders = {};
@@ -169,6 +174,7 @@ async function handleApiProxyRequest(data, sendResponse) {
 
     // 获取响应体
     const responseText = await response.text();
+
     let responseData;
     try {
       responseData = JSON.parse(responseText);
@@ -185,10 +191,10 @@ async function handleApiProxyRequest(data, sendResponse) {
       success: response.ok
     });
   } catch (error) {
-    console.error('API代理请求失败:', error);
     sendResponse({
       success: false,
-      error: error.message || '请求失败'
+      error: error.message || '请求失败',
+      errorDetail: error.toString()
     });
   }
 }

@@ -473,19 +473,27 @@ export const getTechnicalAnalysis = async (
   forceRefresh: boolean = false
 ): Promise<FormattedTechnicalAnalysisData> => {
   try {
+    // 确保symbol是大写的
+    const normalizedSymbol = symbol.toUpperCase();
+
+    // 如果不包含USDT后缀，添加它
+    const fullSymbol = normalizedSymbol.endsWith('USDT')
+      ? normalizedSymbol
+      : `${normalizedSymbol}USDT`;
+
     const url = forceRefresh
-      ? `/crypto/technical-indicators/${symbol}/?force_refresh=true`
-      : `/crypto/technical-indicators/${symbol}/`
+      ? `/crypto/technical-indicators/${fullSymbol}/?force_refresh=true`
+      : `/crypto/technical-indicators/${fullSymbol}/`
 
     let response;
     if (isExtension()) {
       // 在扩展环境中使用代理
       const fullUrl = getBaseUrl() + url;
-      console.log('使用代理获取技术分析数据:', fullUrl);
 
       // 准备请求配置
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         'Cache-Control': 'no-cache'
       };
 
@@ -498,20 +506,40 @@ export const getTechnicalAnalysis = async (
       const config = {
         url: fullUrl,
         method: 'GET',
-        headers
+        headers,
+        timeout: forceRefresh ? 120000 : 30000 // 强制刷新使用更长的超时时间
       };
 
-      // 使用代理发送请求
-      const proxyResponse = await proxyRequest(config);
-      response = proxyResponse.data;
+      try {
+        // 使用代理发送请求
+        const proxyResponse = await proxyRequest(config);
+        response = proxyResponse.data;
+      } catch (proxyError: any) {
+        // 如果是强制刷新失败，可以尝试普通请求
+        if (forceRefresh) {
+          // 递归调用自身，但不使用强制刷新
+          return getTechnicalAnalysis(symbol, false);
+        }
+
+        throw proxyError;
+      }
     } else {
       // 在非扩展环境中使用普通请求
-      response = await api.get<TechnicalAnalysisResponse | ForceRefreshResponse>(url);
+      try {
+        response = await api.get<TechnicalAnalysisResponse | ForceRefreshResponse>(url);
+      } catch (apiError) {
+        // 如果是强制刷新失败，可以尝试普通请求
+        if (forceRefresh) {
+          // 递归调用自身，但不使用强制刷新
+          return getTechnicalAnalysis(symbol, false);
+        }
+
+        throw apiError;
+      }
     }
 
     return formatTechnicalAnalysisData(response)
   } catch (error) {
-    console.error('获取技术分析数据失败:', error)
     throw error
   }
 }

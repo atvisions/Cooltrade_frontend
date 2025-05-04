@@ -659,13 +659,11 @@ const loadAnalysisData = async (forceRefresh: boolean = false) => {
     }
 
     currentSymbol.value = symbol
-    console.log('正在获取交易对数据:', symbol)
 
     try {
       // 优先加载分析数据
       const analysisPromise = getTechnicalAnalysis(symbol, forceRefresh)
         .then(response => {
-          console.log('分析数据加载完成:', JSON.stringify(response, null, 2))
           // 格式化分析数据
           const formattedData = formatTechnicalAnalysisData(response)
           analysisData.value = formattedData
@@ -677,10 +675,8 @@ const loadAnalysisData = async (forceRefresh: boolean = false) => {
           return nextTick()
         })
         .catch(error => {
-          console.error('加载分析数据失败:', error)
           // 检查是否是404错误（代币未找到）
           if (error.response?.status === 404) {
-            console.log('代币未找到，显示特殊提示')
             isTokenNotFound.value = true
             error.value = null // 清除一般错误，使用特殊的未找到视图
           } else {
@@ -694,16 +690,11 @@ const loadAnalysisData = async (forceRefresh: boolean = false) => {
       // 等待分析数据加载完成
       await analysisPromise
 
-      // 确认数据已更新
-      console.log('分析数据已更新，当前价格:', formatPrice(analysisData.value?.current_price))
-
     } catch (apiError: any) {
-      console.error('API调用失败:', apiError)
       // 错误已在各自的Promise中处理
     }
 
   } catch (e) {
-    console.error('加载分析数据失败:', e)
     if (!error.value && !isTokenNotFound.value) {
       error.value = e instanceof Error ? e.message : '加载数据失败'
     }
@@ -715,18 +706,15 @@ const loadAnalysisData = async (forceRefresh: boolean = false) => {
 
 // 组件挂载时加载数据
 onMounted(async () => {
-  console.log('组件挂载，准备加载数据')
-
   // 确保DOM已完全渲染
   await nextTick()
 
   // 延迟一点时间确保DOM已完全渲染
   setTimeout(async () => {
     try {
-      console.log('开始加载分析数据')
       await loadAnalysisData()
     } catch (e) {
-      console.error('加载数据失败:', e)
+      // 错误已在loadAnalysisData中处理
     }
   }, 500)
 })
@@ -904,8 +892,6 @@ const forceRefreshData = async () => {
       return
     }
 
-    console.log('执行强制刷新...')
-
     // 开始模拟进度
     simulateRefreshProgress()
 
@@ -926,9 +912,7 @@ const forceRefreshData = async () => {
         analysisLoading.value = true
 
         // 优先加载分析数据 - 强制刷新
-        console.log('正在执行强制刷新请求，symbol:', currentSymbol.value)
         const refreshResponse = await getTechnicalAnalysis(currentSymbol.value, true)
-        console.log('强制刷新请求成功，获取到新数据:', refreshResponse)
 
         // 更新分析数据
         analysisData.value = refreshResponse
@@ -972,8 +956,6 @@ const forceRefreshData = async () => {
         }, 16) // 约60fps的更新频率
 
       } catch (refreshError) {
-        console.error('强制刷新失败:', refreshError)
-
         // 更新提示文本
         refreshText.value = '强制刷新失败，正在尝试获取缓存数据...'
 
@@ -1080,50 +1062,23 @@ const refreshData = async () => {
 
   try {
     // 尝试使用普通请求获取数据
-    console.log('尝试使用普通请求获取数据...')
     const response = await getTechnicalAnalysis(currentSymbol.value, false)
 
-    // response 已经是 FormattedTechnicalAnalysisData 类型
-    // 直接使用它
-    const formattedData = response
-
     // 更新数据
-    analysisData.value = formattedData
-    console.log('已更新为最新数据')
+    analysisData.value = response
 
     // 标记分析数据加载完成
     analysisLoading.value = false
-
-    // 检查关键字段
-    console.log('检查关键字段:')
-    console.log('- current_price:', formattedData.current_price)
-    console.log('- last_update_time:', formattedData.last_update_time)
-    console.log('- trend_analysis存在:', !!formattedData.trend_analysis)
-    console.log('- indicators_analysis存在:', !!formattedData.indicators_analysis)
-
-    // 确保趋势分析数据更新
-    if (formattedData.trend_analysis?.probabilities) {
-      console.log('更新后的趋势分析数据:', {
-        up: formattedData.trend_analysis.probabilities.up,
-        sideways: formattedData.trend_analysis.probabilities.sideways,
-        down: formattedData.trend_analysis.probabilities.down
-      })
-    } else {
-      console.error('趋势分析数据不存在或格式不正确')
-    }
 
     // 确保视图更新
     await nextTick()
 
   } catch (err: any) {
-    console.error('普通请求失败:', err)
-
     // 重置加载状态
     analysisLoading.value = false
 
     // 检查是否是404错误（代币未找到）
     if (err.response?.status === 404) {
-      console.log('代币未找到，显示特殊提示')
       isTokenNotFound.value = true
       error.value = null // 清除一般错误，使用特殊的未找到视图
     } else {
@@ -1209,19 +1164,13 @@ ${trendSummary.substring(0, 50)}${trendSummary.length > 50 ? '...' : ''}
 #加密货币 #技术分析 #交易建议`
     }
 
-    // 打印最终分享文本，用于调试
-    console.log('最终分享文本:', shareText)
-    console.log('分享文本长度:', shareText.length)
-
     // 构建Twitter分享URL
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`
 
     // 在新窗口中打开Twitter分享页面
     window.open(twitterUrl, '_blank')
-
-    console.log('已打开Twitter分享页面')
   } catch (error) {
-    console.error('分享到Twitter失败:', error)
+    // 分享失败处理
   }
 }
 
@@ -1408,7 +1357,7 @@ const saveChartImage = async () => {
     link.href = canvas.toDataURL('image/png')
     link.click()
   } catch (error) {
-    console.error('保存图片失败:', error)
+    // 保存图片失败处理
   }
 }
 

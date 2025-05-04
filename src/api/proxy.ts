@@ -23,6 +23,17 @@ export const proxyRequest = async (config: AxiosRequestConfig): Promise<any> => 
   return new Promise((resolve, reject) => {
     const { url, method, headers, data } = config
 
+    // 检查是否是强制刷新请求
+    const isForceRefresh = url?.includes('force_refresh=true')
+
+    // 设置超时处理
+    let timeoutId: number | null = null
+    const timeout = isForceRefresh ? 120000 : 30000 // 强制刷新使用更长的超时时间
+
+    timeoutId = window.setTimeout(() => {
+      reject(new Error(`请求超时 (${timeout/1000}秒)`))
+    }, timeout)
+
     // 发送消息到background.js
     chrome.runtime.sendMessage({
       type: 'PROXY_API_REQUEST',
@@ -33,15 +44,23 @@ export const proxyRequest = async (config: AxiosRequestConfig): Promise<any> => 
         body: data
       }
     }, (response) => {
+      // 清除超时计时器
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId)
+      }
+
       if (chrome.runtime.lastError) {
-        console.error('代理请求失败:', chrome.runtime.lastError)
         reject(new Error(chrome.runtime.lastError.message))
         return
       }
 
-      if (!response.success) {
-        console.error('API请求失败:', response.error)
-        reject(new Error(response.error || '请求失败'))
+      if (!response || !response.success) {
+        const error = new Error(response?.error || '请求失败')
+        if (response?.errorDetail) {
+          // @ts-ignore
+          error.detail = response.errorDetail
+        }
+        reject(error)
         return
       }
 
