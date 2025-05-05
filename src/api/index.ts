@@ -465,13 +465,12 @@ function isBaseApiResponse(response: unknown): response is BaseApiResponse {
   )
 }
 
-
-
-// 获取技术分析数据
+// 获取技术分析数据 - 添加更详细的错误处理和日志
 export const getTechnicalAnalysis = async (
   symbol: string,
   forceRefresh: boolean = false
 ): Promise<FormattedTechnicalAnalysisData> => {
+  console.log(`开始请求技术分析数据 - 币种:${symbol}, 强制刷新:${forceRefresh}`)
   try {
     // 确保symbol是大写的
     const normalizedSymbol = symbol.toUpperCase();
@@ -480,74 +479,77 @@ export const getTechnicalAnalysis = async (
     const fullSymbol = normalizedSymbol.endsWith('USDT')
       ? normalizedSymbol
       : `${normalizedSymbol}USDT`;
-
-    const url = forceRefresh
-      ? `/crypto/technical-indicators/${fullSymbol}/?force_refresh=true`
-      : `/crypto/technical-indicators/${fullSymbol}/`
-
-    let response;
-    if (isExtension()) {
-      // 在扩展环境中使用代理
-      const fullUrl = getBaseUrl() + url;
-
-      // 准备请求配置
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Cache-Control': 'no-cache'
-      };
-
-      // 添加认证头
-      const token = localStorage.getItem('token');
-      if (token) {
-        headers.Authorization = token;
-      }
-
-      const config = {
-        url: fullUrl,
-        method: 'GET',
-        headers,
-        timeout: forceRefresh ? 120000 : 30000 // 强制刷新使用更长的超时时间
-      };
-
-      try {
-        // 使用代理发送请求
-        const proxyResponse = await proxyRequest(config);
-        response = proxyResponse.data;
-      } catch (proxyError: any) {
-        // 如果是强制刷新失败，可以尝试普通请求
-        if (forceRefresh) {
-          // 递归调用自身，但不使用强制刷新
-          return getTechnicalAnalysis(symbol, false);
+    
+    console.log(`规范化后的交易对: ${fullSymbol}`)
+    
+    // 构建请求路径
+    const path = `/crypto/technical-indicators/${fullSymbol}/`
+    
+    // 准备查询参数
+    const params: Record<string, any> = {}
+    if (forceRefresh) {
+      params.force_refresh = true
+      console.log('设置强制刷新参数')
+    }
+    
+    console.log(`发送API请求: ${path}, 参数:`, params)
+    
+    // 发送请求
+    const response = await api.get(path, { params })
+    console.log('API响应状态码:', response.status)
+    
+    // 检查响应格式 - 记录详细信息
+    const data = response.data
+    console.log('API响应数据类型:', typeof data)
+    
+    if (typeof data === 'object') {
+      console.log('API响应数据结构:', Object.keys(data))
+      
+      // 检查是否是特殊响应格式
+      if ('status' in data) {
+        console.log('检测到状态字段, 值:', data.status)
+        
+        if (data.status === 'not_found') {
+          console.log('API响应: 代币未找到, 需要刷新:', data.needs_refresh)
+          return data as unknown as FormattedTechnicalAnalysisData
         }
-
-        throw proxyError;
-      }
-    } else {
-      // 在非扩展环境中使用普通请求
-      try {
-        response = await api.get<TechnicalAnalysisResponse | ForceRefreshResponse>(url);
-      } catch (apiError) {
-        // 如果是强制刷新失败，可以尝试普通请求
-        if (forceRefresh) {
-          // 递归调用自身，但不使用强制刷新
-          return getTechnicalAnalysis(symbol, false);
+        
+        if (data.status === 'success' && 'data' in data) {
+          console.log('API响应: 成功带数据字段, 返回data内容')
+          return data.data
         }
-
-        throw apiError;
       }
     }
-
-    return formatTechnicalAnalysisData(response)
-  } catch (error) {
+    
+    // 假设响应是直接的技术分析数据，则格式化并返回
+    console.log('返回原始响应数据')
+    return response.data
+  } catch (error: any) {
+    // 增强错误日志
+    console.error('技术分析数据请求失败:', error)
+    
+    if (error.response) {
+      // 服务器响应了错误状态码
+      console.error('服务器错误响应:', {
+        status: error.response.status,
+        headers: error.response.headers,
+        data: error.response.data
+      })
+    } else if (error.request) {
+      // 请求发送了但没有收到响应
+      console.error('未收到服务器响应:', error.request)
+    } else {
+      // 请求设置出错
+      console.error('请求设置错误:', error.message)
+    }
+    
+    // 网络错误重新格式化为更友好的消息
+    if (error.code === 'ERR_NETWORK') {
+      throw new Error('网络连接错误，请检查您的网络连接')
+    }
+    
     throw error
   }
 }
-
-
-
-
-
-
 
 export default api

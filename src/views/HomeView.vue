@@ -22,6 +22,13 @@
 
     <!-- 主要内容区域 -->
     <main class="absolute inset-0 top-12 bottom-16 overflow-y-auto">
+      <!-- 调试信息 -->
+      <div v-if="isDevelopment" class="max-w-[375px] mx-auto px-4 py-2 text-xs text-gray-400 border-b border-gray-800">
+        <div>状态: {{ loading ? '加载中' : error ? '错误' : isTokenNotFound ? '未找到' : analysisData ? '已加载' : '未知' }}</div>
+        <div v-if="currentSymbol">交易对: {{ currentSymbol }}</div>
+        <div v-if="error">错误: {{ error }}</div>
+      </div>
+
       <!-- 整体加载状态 - 只在初始加载时显示 -->
       <div v-if="loading && !analysisData" class="max-w-[375px] mx-auto px-4 pb-16">
         <!-- 价格展示卡片骨架屏 -->
@@ -47,7 +54,7 @@
             <div class="h-4 w-12 bg-gray-600/20 rounded mx-auto"></div>
           </div>
 
-          <div class="p-3 rounded-lg bg-gradient-to-br from-red-600/20 to-red-800/20 border border-red-500/30 animate-pulse">
+          <div class="p-3 rounded-lg bg-[rgba(239,68,68,0.12)] border border-red-500/30 animate-pulse">
             <div class="h-6 w-16 bg-red-500/20 rounded mx-auto mb-1"></div>
             <div class="h-4 w-12 bg-red-500/20 rounded mx-auto"></div>
           </div>
@@ -83,6 +90,7 @@
         <TokenNotFoundView
           :symbol="currentSymbol"
           @refresh="forceRefreshData"
+          :is-refreshing="showRefreshModal"
         />
       </div>
 
@@ -90,13 +98,22 @@
       <div v-else-if="error" class="flex items-center justify-center h-full">
         <div class="text-center px-4">
           <i class="ri-error-warning-line text-4xl text-red-500 mb-2"></i>
-          <p class="text-gray-300 mb-4">{{ error }}</p>
-          <button
-            class="px-4 py-2 bg-primary text-white rounded-lg"
-            @click="refreshData"
-          >
-            重试
-          </button>
+          <p class="text-gray-300 mb-2">{{ error }}</p>
+          <p class="text-gray-400 text-sm mb-4">请尝试重新加载或稍后再试</p>
+          <div class="flex space-x-3 justify-center">
+            <button
+              class="px-4 py-2 bg-primary text-white rounded-lg"
+              @click="refreshData"
+            >
+              重试
+            </button>
+            <button
+              class="px-4 py-2 bg-blue-600 text-white rounded-lg"
+              @click="forceRefreshData"
+            >
+              强制刷新
+            </button>
+          </div>
         </div>
       </div>
 
@@ -105,12 +122,9 @@
         <!-- 价格展示卡片 -->
         <div class="mt-6 p-5 rounded-lg bg-gradient-to-b from-gray-800/60 to-gray-900/60 border border-gray-700/50 shadow-lg">
           <h2 class="text-center text-gray-400 mb-1">当前价格</h2>
-          <div class="text-center text-3xl font-bold mb-2" v-if="analysisData">
+          <div class="text-center text-3xl font-bold mb-2">
             {{ formatPrice(realtimePrice || analysisData.current_price) }}
             <span class="text-sm text-gray-400">USD</span>
-          </div>
-          <div class="text-center text-3xl font-bold mb-2" v-else>
-            -- USD
           </div>
 
           <!-- 操作按钮 -->
@@ -151,7 +165,7 @@
             </div>
           </div>
 
-          <div class="p-3 rounded-lg bg-gradient-to-br from-red-600/20 to-red-800/20 border border-red-500/30 text-center">
+          <div class="p-3 rounded-lg bg-[rgba(239,68,68,0.12)] border border-red-500/30 text-center">
             <div class="text-red-400 text-xl font-bold mb-1">{{ formatPercent(analysisData.trend_analysis.probabilities.down) }}</div>
             <div class="text-xs text-red-300 flex items-center justify-center">
               <i class="ri-arrow-down-line w-4 h-4 flex items-center justify-center"></i>
@@ -186,107 +200,123 @@
                 </div>
                 <div class="flex items-center justify-between">
                   <span class="font-medium">{{ analysisData.indicators_analysis.RSI.value }}</span>
-                  <span :class="getIndicatorClass(analysisData.indicators_analysis.RSI.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.RSI.support_trend)"></span>
+                  <span :class="getIndicatorClass(analysisData.indicators_analysis.RSI.support_trend)" class="text-xs flex items-center justify-center w-5 h-5 rounded-full" :style="`background:${getIndicatorBgColor(analysisData.indicators_analysis.RSI.support_trend)}`">
+                    <i :class="getTrendIconClass(analysisData.indicators_analysis.RSI.support_trend)" class="text-base"></i>
+                  </span>
                 </div>
               </div>
 
               <!-- BIAS -->
               <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
-              <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
-                BIAS
-                <el-tooltip :content="indicatorExplanations.BIAS" placement="top">
-                  <i class="ri-question-line cursor-help"></i>
-                </el-tooltip>
+                <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
+                  BIAS
+                  <el-tooltip :content="indicatorExplanations.BIAS" placement="top">
+                    <i class="ri-question-line cursor-help"></i>
+                  </el-tooltip>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="font-medium">{{ analysisData.indicators_analysis.BIAS.value }}</span>
+                  <span :class="getIndicatorClass(analysisData.indicators_analysis.BIAS.support_trend)" class="text-xs flex items-center justify-center w-5 h-5 rounded-full" :style="`background:${getIndicatorBgColor(analysisData.indicators_analysis.BIAS.support_trend)}`">
+                    <i :class="getTrendIconClass(analysisData.indicators_analysis.BIAS.support_trend)" class="text-base"></i>
+                  </span>
+                </div>
               </div>
-              <div class="flex items-center justify-between">
-                <span class="font-medium">{{ analysisData.indicators_analysis.BIAS.value }}</span>
-                <span :class="getIndicatorClass(analysisData.indicators_analysis.BIAS.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.BIAS.support_trend)"></span>
-              </div>
-            </div>
 
-            <!-- PSY -->
-            <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
-              <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
-                PSY
-                <el-tooltip :content="indicatorExplanations.PSY" placement="top">
-                  <i class="ri-question-line cursor-help"></i>
-                </el-tooltip>
+              <!-- PSY -->
+              <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
+                <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
+                  PSY
+                  <el-tooltip :content="indicatorExplanations.PSY" placement="top">
+                    <i class="ri-question-line cursor-help"></i>
+                  </el-tooltip>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="font-medium">{{ analysisData.indicators_analysis.PSY.value }}</span>
+                  <span :class="getIndicatorClass(analysisData.indicators_analysis.PSY.support_trend)" class="text-xs flex items-center justify-center w-5 h-5 rounded-full" :style="`background:${getIndicatorBgColor(analysisData.indicators_analysis.PSY.support_trend)}`">
+                    <i :class="getTrendIconClass(analysisData.indicators_analysis.PSY.support_trend)" class="text-base"></i>
+                  </span>
+                </div>
               </div>
-              <div class="flex items-center justify-between">
-                <span class="font-medium">{{ analysisData.indicators_analysis.PSY.value }}</span>
-                <span :class="getIndicatorClass(analysisData.indicators_analysis.PSY.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.PSY.support_trend)"></span>
-              </div>
-            </div>
 
-            <!-- VWAP -->
-            <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
-              <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
-                VWAP
-                <el-tooltip :content="indicatorExplanations.VWAP" placement="top">
-                  <i class="ri-question-line cursor-help"></i>
-                </el-tooltip>
+              <!-- VWAP -->
+              <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
+                <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
+                  VWAP
+                  <el-tooltip :content="indicatorExplanations.VWAP" placement="top">
+                    <i class="ri-question-line cursor-help"></i>
+                  </el-tooltip>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="font-medium">{{ analysisData.indicators_analysis.VWAP.value.toFixed(2) }}</span>
+                  <span :class="getIndicatorClass(analysisData.indicators_analysis.VWAP.support_trend)" class="text-xs flex items-center justify-center w-5 h-5 rounded-full" :style="`background:${getIndicatorBgColor(analysisData.indicators_analysis.VWAP.support_trend)}`">
+                    <i :class="getTrendIconClass(analysisData.indicators_analysis.VWAP.support_trend)" class="text-base"></i>
+                  </span>
+                </div>
               </div>
-              <div class="flex items-center justify-between">
-                <span class="font-medium">{{ analysisData.indicators_analysis.VWAP.value.toFixed(2) }}</span>
-                <span :class="getIndicatorClass(analysisData.indicators_analysis.VWAP.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.VWAP.support_trend)"></span>
-              </div>
-            </div>
 
-            <!-- Funding Rate -->
-            <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
-              <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
-                Funding Rate
-                <el-tooltip :content="indicatorExplanations.FundingRate" placement="top">
-                  <i class="ri-question-line cursor-help"></i>
-                </el-tooltip>
+              <!-- Funding Rate -->
+              <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
+                <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
+                  Funding Rate
+                  <el-tooltip :content="indicatorExplanations.FundingRate" placement="top">
+                    <i class="ri-question-line cursor-help"></i>
+                  </el-tooltip>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="font-medium">{{ (analysisData.indicators_analysis.FundingRate.value * 100).toFixed(4) }}%</span>
+                  <span :class="getIndicatorClass(analysisData.indicators_analysis.FundingRate.support_trend)" class="text-xs flex items-center justify-center w-5 h-5 rounded-full" :style="`background:${getIndicatorBgColor(analysisData.indicators_analysis.FundingRate.support_trend)}`">
+                    <i :class="getTrendIconClass(analysisData.indicators_analysis.FundingRate.support_trend)" class="text-base"></i>
+                  </span>
+                </div>
               </div>
-              <div class="flex items-center justify-between">
-                <span class="font-medium">{{ (analysisData.indicators_analysis.FundingRate.value * 100).toFixed(4) }}%</span>
-                <span :class="getIndicatorClass(analysisData.indicators_analysis.FundingRate.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.FundingRate.support_trend)"></span>
-              </div>
-            </div>
 
-            <!-- Exchange Netflow -->
-            <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
-              <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
-                Exchange Netflow
-                <el-tooltip :content="indicatorExplanations.ExchangeNetflow" placement="top">
-                  <i class="ri-question-line cursor-help"></i>
-                </el-tooltip>
+              <!-- Exchange Netflow -->
+              <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
+                <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
+                  Exchange Netflow
+                  <el-tooltip :content="indicatorExplanations.ExchangeNetflow" placement="top">
+                    <i class="ri-question-line cursor-help"></i>
+                  </el-tooltip>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="font-medium">{{ analysisData.indicators_analysis.ExchangeNetflow.value.toFixed(2) }}</span>
+                  <span :class="getIndicatorClass(analysisData.indicators_analysis.ExchangeNetflow.support_trend)" class="text-xs flex items-center justify-center w-5 h-5 rounded-full" :style="`background:${getIndicatorBgColor(analysisData.indicators_analysis.ExchangeNetflow.support_trend)}`">
+                    <i :class="getTrendIconClass(analysisData.indicators_analysis.ExchangeNetflow.support_trend)" class="text-base"></i>
+                  </span>
+                </div>
               </div>
-              <div class="flex items-center justify-between">
-                <span class="font-medium">{{ analysisData.indicators_analysis.ExchangeNetflow.value.toFixed(2) }}</span>
-                <span :class="getIndicatorClass(analysisData.indicators_analysis.ExchangeNetflow.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.ExchangeNetflow.support_trend)"></span>
-              </div>
-            </div>
 
-            <!-- NUPL -->
-            <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
-              <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
-                NUPL
-                <el-tooltip :content="indicatorExplanations.NUPL" placement="top">
-                  <i class="ri-question-line cursor-help"></i>
-                </el-tooltip>
+              <!-- NUPL -->
+              <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
+                <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
+                  NUPL
+                  <el-tooltip :content="indicatorExplanations.NUPL" placement="top">
+                    <i class="ri-question-line cursor-help"></i>
+                  </el-tooltip>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="font-medium">{{ analysisData.indicators_analysis.NUPL.value.toFixed(2) }}</span>
+                  <span :class="getIndicatorClass(analysisData.indicators_analysis.NUPL.support_trend)" class="text-xs flex items-center justify-center w-5 h-5 rounded-full" :style="`background:${getIndicatorBgColor(analysisData.indicators_analysis.NUPL.support_trend)}`">
+                    <i :class="getTrendIconClass(analysisData.indicators_analysis.NUPL.support_trend)" class="text-base"></i>
+                  </span>
+                </div>
               </div>
-              <div class="flex items-center justify-between">
-                <span class="font-medium">{{ analysisData.indicators_analysis.NUPL.value.toFixed(2) }}</span>
-                <span :class="getIndicatorClass(analysisData.indicators_analysis.NUPL.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.NUPL.support_trend)"></span>
-              </div>
-            </div>
 
-            <!-- Mayer Multiple -->
-            <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
-              <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
-                Mayer Multiple
-                <el-tooltip :content="indicatorExplanations.MayerMultiple" placement="top">
-                  <i class="ri-question-line cursor-help"></i>
-                </el-tooltip>
+              <!-- Mayer Multiple -->
+              <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
+                <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
+                  Mayer Multiple
+                  <el-tooltip :content="indicatorExplanations.MayerMultiple" placement="top">
+                    <i class="ri-question-line cursor-help"></i>
+                  </el-tooltip>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="font-medium">{{ analysisData.indicators_analysis.MayerMultiple.value.toFixed(2) }}</span>
+                  <span :class="getIndicatorClass(analysisData.indicators_analysis.MayerMultiple.support_trend)" class="text-xs flex items-center justify-center w-5 h-5 rounded-full" :style="`background:${getIndicatorBgColor(analysisData.indicators_analysis.MayerMultiple.support_trend)}`">
+                    <i :class="getTrendIconClass(analysisData.indicators_analysis.MayerMultiple.support_trend)" class="text-base"></i>
+                  </span>
+                </div>
               </div>
-              <div class="flex items-center justify-between">
-                <span class="font-medium">{{ analysisData.indicators_analysis.MayerMultiple.value.toFixed(2) }}</span>
-                <span :class="getIndicatorClass(analysisData.indicators_analysis.MayerMultiple.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.MayerMultiple.support_trend)"></span>
-              </div>
-            </div>
             </div>
 
             <!-- MACD (独占一行) -->
@@ -298,7 +328,9 @@
                     <i class="ri-question-line cursor-help"></i>
                   </el-tooltip>
                 </div>
-                <span :class="getIndicatorClass(analysisData.indicators_analysis.MACD.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.MACD.support_trend)"></span>
+                <span :class="getIndicatorClass(analysisData.indicators_analysis.MACD.support_trend)" class="text-xs flex items-center justify-center w-5 h-5 rounded-full" :style="`background:${getIndicatorBgColor(analysisData.indicators_analysis.MACD.support_trend)}`">
+                  <i :class="getTrendIconClass(analysisData.indicators_analysis.MACD.support_trend)" class="text-base"></i>
+                </span>
               </div>
               <div class="grid grid-cols-3 gap-2">
                 <div class="text-center p-1 rounded bg-blue-900/20 border border-blue-800/30">
@@ -325,7 +357,9 @@
                     <i class="ri-question-line cursor-help"></i>
                   </el-tooltip>
                 </div>
-                <span :class="getIndicatorClass(analysisData.indicators_analysis.BollingerBands.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.BollingerBands.support_trend)"></span>
+                <span :class="getIndicatorClass(analysisData.indicators_analysis.BollingerBands.support_trend)" class="text-xs flex items-center justify-center w-5 h-5 rounded-full" :style="`background:${getIndicatorBgColor(analysisData.indicators_analysis.BollingerBands.support_trend)}`">
+                  <i :class="getTrendIconClass(analysisData.indicators_analysis.BollingerBands.support_trend)" class="text-base"></i>
+                </span>
               </div>
               <div class="grid grid-cols-3 gap-2">
                 <div class="text-center p-1 rounded bg-red-900/20 border border-red-800/30">
@@ -352,7 +386,9 @@
                     <i class="ri-question-line cursor-help"></i>
                   </el-tooltip>
                 </div>
-                <span :class="getIndicatorClass(analysisData.indicators_analysis.DMI.support_trend)" class="text-xs" v-html="getIndicatorIcon(analysisData.indicators_analysis.DMI.support_trend)"></span>
+                <span :class="getIndicatorClass(analysisData.indicators_analysis.DMI.support_trend)" class="text-xs flex items-center justify-center w-5 h-5 rounded-full" :style="`background:${getIndicatorBgColor(analysisData.indicators_analysis.DMI.support_trend)}`">
+                  <i :class="getTrendIconClass(analysisData.indicators_analysis.DMI.support_trend)" class="text-base"></i>
+                </span>
               </div>
               <div class="grid grid-cols-3 gap-2">
                 <div class="text-center p-1 rounded bg-green-900/20 border border-green-800/30">
@@ -441,6 +477,8 @@
 
 
       </div>
+
+ 
     </main>
 
     <!-- 刷新进度弹窗 -->
@@ -493,7 +531,7 @@ import html2canvas from 'html2canvas'
 // eslint-disable-next-line
 declare module 'qrcode';
 import QRCode from 'qrcode'
-import { ElTooltip } from 'element-plus'
+import { ElTooltip, ElMessage } from 'element-plus'
 
 import { getTechnicalAnalysis } from '@/api'
 import { parseSymbolFromUrl } from '@/utils/trading'
@@ -502,6 +540,9 @@ import type {
 } from '@/types/technical-analysis'
 import { formatTechnicalAnalysisData } from '@/utils/data-formatter'
 import TokenNotFoundView from '@/components/TokenNotFoundView.vue'
+
+// 是否为开发环境的标志
+const isDevelopment = process.env.NODE_ENV !== 'production'
 
 const isExtensionEnvironment = (): boolean => {
   return typeof chrome !== 'undefined' &&
@@ -636,71 +677,154 @@ const loadAnalysisData = async (forceRefresh: boolean = false) => {
         const tab = tabs[0]
 
         if (!tab.url) {
+          console.error('无法获取当前页面URL')
           error.value = '无法获取当前页面URL'
+          loading.value = false
           return
         }
 
         url = tab.url
+        console.log('开始解析交易对符号，URL:', url)
         symbol = parseSymbolFromUrl(url)
       } catch (e) {
         console.error('获取标签页信息失败:', e)
         error.value = '无法访问当前标签页，请确保已授予必要权限'
+        loading.value = false
         return
       }
     } else {
       url = window.location.href
+      console.log('开始解析交易对符号，URL:', url)
       symbol = parseSymbolFromUrl(url)
     }
 
     if (!symbol) {
-      console.error('无法从URL解析交易对:', url)
-      error.value = '当前页面不是支持的交易所交易页面，或无法识别交易对信息'
-      return
+      console.log('无法从URL解析交易对，使用默认BTC交易对')
+      symbol = 'BTC' // 默认使用BTC
+      // 避免不必要的错误提示，移除错误信息
+      error.value = null
     }
 
     currentSymbol.value = symbol
 
     try {
       // 优先加载分析数据
-      const analysisPromise = getTechnicalAnalysis(symbol, forceRefresh)
-        .then(response => {
-          // 格式化分析数据
+      console.log('开始请求分析数据, 交易对:', symbol)
+      try {
+        // 获取技术分析数据
+        const response = await getTechnicalAnalysis(symbol, forceRefresh)
+        console.log('分析数据响应:', response)
+
+        // 处理特殊的"not_found"状态
+        if (typeof response === 'object' && response !== null) {
+          // 检查是否是API特殊响应格式 {"status": "not_found", "needs_refresh": true}
+          if ('status' in response && (response as any).status === 'not_found') {
+            console.log('交易对未找到，需要手动刷新')
+            isTokenNotFound.value = true
+            loading.value = false
+            analysisLoading.value = false
+            return
+          }
+
+          // 正常数据
+          console.log('API返回正常数据:', response)
+          
+          // 确保数据格式化，填充可能缺失的字段
           const formattedData = formatTechnicalAnalysisData(response)
+          
+          // 更新分析数据
           analysisData.value = formattedData
+          
+          // 打印检查数据完整性
+          console.log('初始加载，格式化数据是否包含市场趋势分析:', !!formattedData.trend_analysis)
+          console.log('初始加载，格式化数据是否包含交易建议:', !!formattedData.trading_advice)
+          console.log('初始加载，格式化数据是否包含风险评估:', !!formattedData.risk_assessment)
+          
           // 重置重试计数
           retryCount.value = 0
-          // 标记分析数据加载完成
+          // 重置错误和未找到状态
+          error.value = null
+          isTokenNotFound.value = false
+        } else {
+          console.error('API返回格式错误:', response)
+          error.value = '服务器返回数据格式错误'
+        }
+      } catch (apiError: any) {
+        console.error('API请求错误:', apiError)
+        
+        // 获取详细错误信息
+        let errorMsg = '请求失败';
+        if (apiError.message) {
+          errorMsg = apiError.message;
+        }
+        
+        // 网络错误处理
+        if (apiError.code === 'ERR_NETWORK' || apiError.message?.includes('Network Error')) {
+          errorMsg = '网络连接错误，请检查网络连接后重试';
+        } 
+        // 超时错误
+        else if (apiError.code === 'ECONNABORTED' || apiError.message?.includes('timeout')) {
+          errorMsg = '请求超时，服务器响应时间过长';
+        }
+        // 服务器错误
+        else if (apiError.response?.status >= 500) {
+          console.log('服务器500错误，可能是代币未找到，显示TokenNotFoundView')
+          isTokenNotFound.value = true
+          error.value = null
+          loading.value = false
           analysisLoading.value = false
-          // 确保视图更新
-          return nextTick()
-        })
-        .catch(error => {
-          // 检查是否是404错误（代币未找到）
-          if (error.response?.status === 404) {
+          return
+        }
+        
+        // 检查错误响应中是否包含not_found信息
+        if (apiError.response?.data && typeof apiError.response.data === 'object') {
+          const errorData = apiError.response.data;
+          if (errorData.status === 'not_found') {
+            console.log('错误响应中发现交易对未找到状态')
             isTokenNotFound.value = true
-            error.value = null // 清除一般错误，使用特殊的未找到视图
-          } else {
-            isTokenNotFound.value = false
-            error.value = error.message || '加载分析数据失败'
+            error.value = null
+            loading.value = false
+            analysisLoading.value = false
+            return;
           }
-          analysisLoading.value = false
-          throw error // 重新抛出错误以便外层捕获
-        })
-
-      // 等待分析数据加载完成
-      await analysisPromise
+        }
+        
+        // 处理404错误(代币未找到)，这也可能意味着数据库中没有该代币
+        if (apiError.response?.status === 404) {
+          console.log('检测到404错误，认为是交易对未找到')
+          isTokenNotFound.value = true
+          error.value = null // 清除错误，显示特殊的未找到视图
+          return
+        } else {
+          isTokenNotFound.value = false
+          error.value = errorMsg;
+          console.error('设置错误信息:', error.value)
+        }
+      }
 
     } catch (apiError: any) {
-      // 错误已在各自的Promise中处理
+      console.error('API请求错误:', apiError)
+      error.value = apiError.message || '加载分析数据失败'
     }
 
   } catch (e) {
+    console.error('整体加载过程错误:', e)
     if (!error.value && !isTokenNotFound.value) {
       error.value = e instanceof Error ? e.message : '加载数据失败'
     }
   } finally {
     // 整体加载状态结束
     loading.value = false
+    analysisLoading.value = false
+    
+    // 调试信息
+    console.log('加载过程结束，状态:', {
+      loading: loading.value,
+      analysisLoading: analysisLoading.value,
+      error: error.value,
+      isTokenNotFound: isTokenNotFound.value,
+      hasData: !!analysisData.value
+    })
   }
 }
 
@@ -709,12 +833,19 @@ onMounted(async () => {
   // 确保DOM已完全渲染
   await nextTick()
 
+  console.log('HomeView 组件已挂载')
+
   // 延迟一点时间确保DOM已完全渲染
   setTimeout(async () => {
     try {
+      console.log('开始加载分析数据')
       await loadAnalysisData()
+      console.log('分析数据加载完成', analysisData.value)
     } catch (e) {
-      // 错误已在loadAnalysisData中处理
+      console.error('加载分析数据出错:', e)
+      // 确保错误状态被正确设置
+      error.value = e instanceof Error ? e.message : '加载数据失败'
+      loading.value = false
     }
   }, 500)
 })
@@ -762,6 +893,17 @@ const getIndicatorClass = (trend?: string) => {
   if (trend === 'bearish' || trend === '看跌' || trend === '不支持当前趋势') return 'text-red-400'
   if (trend === 'neutral' || trend === '中性') return 'text-yellow-400'
   return 'text-gray-400'
+}
+
+// 获取指标趋势图标类名
+const getTrendIconClass = (trend?: string) => {
+  if (trend === 'bullish' || trend === '看涨' || trend === '支持当前趋势') {
+    return 'ri-arrow-up-line';
+  }
+  if (trend === 'bearish' || trend === '看跌' || trend === '反对当前趋势') {
+    return 'ri-arrow-down-line';
+  }
+  return 'ri-subtract-line';
 }
 
 // 新增：趋势图标渲染函数（圆形底色+小尺寸+带尾巴箭头）
@@ -913,9 +1055,18 @@ const forceRefreshData = async () => {
 
         // 优先加载分析数据 - 强制刷新
         const refreshResponse = await getTechnicalAnalysis(currentSymbol.value, true)
-
+        console.log('强制刷新数据返回:', refreshResponse)
+        
+        // 确保数据格式化，填充可能缺失的字段
+        const formattedData = formatTechnicalAnalysisData(refreshResponse)
+        
         // 更新分析数据
-        analysisData.value = refreshResponse
+        analysisData.value = formattedData
+
+        // 打印检查数据完整性
+        console.log('格式化后的数据是否包含市场趋势分析:', !!formattedData.trend_analysis)
+        console.log('格式化后的数据是否包含交易建议:', !!formattedData.trading_advice)
+        console.log('格式化后的数据是否包含风险评估:', !!formattedData.risk_assessment)
 
         // 重置代币未找到状态
         isTokenNotFound.value = false
@@ -955,53 +1106,44 @@ const forceRefreshData = async () => {
           }
         }, 16) // 约60fps的更新频率
 
-      } catch (refreshError) {
+      } catch (refreshError: any) {
         // 更新提示文本
         refreshText.value = '强制刷新失败，正在尝试获取缓存数据...'
-
-        // 设置加载状态
-        analysisLoading.value = true
-
-        // 尝试使用普通请求获取数据
-        const regularResponse = await getTechnicalAnalysis(currentSymbol.value, false)
-
-        // 更新数据
-        analysisData.value = regularResponse
-
-        // 标记分析数据加载完成
-        analysisLoading.value = false
-
-        // 确保视图更新
-        await nextTick()
-
-        // 显示友好的提示
-        refreshText.value = '已加载最新缓存数据'
-
-        // 从当前进度平滑过渡到100%
-        const currentProgress = refreshProgress.value
-        const startTransition = Date.now()
-        const transitionDuration = 500 // 500毫秒的过渡时间
-
-        const transitionInterval = setInterval(() => {
-          const elapsedMs = Date.now() - startTransition
-          const transitionProgress = Math.min(1, elapsedMs / transitionDuration)
-
-          // 使用缓动函数使过渡更自然
-          const easedProgress = 1 - Math.pow(1 - transitionProgress, 2)
-          const newProgress = currentProgress + (100 - currentProgress) * easedProgress
-
-          refreshProgress.value = newProgress
-
-          if (transitionProgress >= 1) {
-            clearInterval(transitionInterval)
-            refreshProgress.value = 100
-
-            // 延迟关闭弹窗，让用户看到100%的进度
-            setTimeout(() => {
-              showRefreshModal.value = false
-            }, 500)
-          }
-        }, 16) // 约60fps的更新频率
+        
+        // 检查是否有特定错误提示
+        let errorMessage = '强制刷新失败';
+        
+        // 检查是否是服务器错误（404或500）
+        if (refreshError.response?.status === 404 || refreshError.response?.status >= 500) {
+          console.log(`服务器返回${refreshError.response.status}错误，认为是交易对未找到状态`);
+          isTokenNotFound.value = true;
+          
+          // 关闭进度弹窗
+          setTimeout(() => {
+            showRefreshModal.value = false;
+          }, 1000);
+          
+          return;
+        }
+        
+        // 处理响应中包含的详细错误信息
+        if (refreshError.response?.data?.message) {
+          errorMessage = refreshError.response.data.message;
+        } else if (refreshError.message) {
+          errorMessage = refreshError.message;
+        }
+        
+        // 检查是否仍是未找到状态
+        if (
+          refreshError.response?.data?.status === 'not_found' || 
+          (typeof refreshError.response?.data === 'object' && 
+           refreshError.response?.data !== null &&
+           'status' in refreshError.response.data &&
+           refreshError.response.data.status === 'not_found')
+        ) {
+          console.log('强制刷新后仍未找到数据');
+          isTokenNotFound.value = true;
+        }
       }
     } catch (err: any) {
       console.error('数据刷新失败:', err)
@@ -1063,9 +1205,28 @@ const refreshData = async () => {
   try {
     // 尝试使用普通请求获取数据
     const response = await getTechnicalAnalysis(currentSymbol.value, false)
+    console.log('普通刷新数据返回:', response)
 
+    // 检查响应状态，处理新的响应格式
+    if (typeof response === 'object' && response !== null && 'status' in response) {
+      const apiResponse = response as any;
+      if (apiResponse.status === 'not_found' && apiResponse.needs_refresh === true) {
+        isTokenNotFound.value = true
+        analysisLoading.value = false
+        return
+      }
+    }
+
+    // 确保数据格式化，填充可能缺失的字段
+    const formattedData = formatTechnicalAnalysisData(response)
+    
     // 更新数据
-    analysisData.value = response
+    analysisData.value = formattedData
+    
+    // 打印检查数据完整性
+    console.log('普通刷新后，格式化数据是否包含市场趋势分析:', !!formattedData.trend_analysis)
+    console.log('普通刷新后，格式化数据是否包含交易建议:', !!formattedData.trading_advice)
+    console.log('普通刷新后，格式化数据是否包含风险评估:', !!formattedData.risk_assessment)
 
     // 标记分析数据加载完成
     analysisLoading.value = false
@@ -1263,7 +1424,7 @@ const saveChartImage = async () => {
       container.appendChild(indicatorsSection)
     }
 
-    // 交易建议卡片
+    // 交易建议卡片 - 确保始终创建并保留该部分
     if (analysisData.value?.trading_advice) {
       const advice = analysisData.value.trading_advice
       const adviceSection = document.createElement('div')
@@ -1286,7 +1447,7 @@ const saveChartImage = async () => {
       container.appendChild(adviceSection)
     }
 
-    // 风险评估卡片
+    // 风险评估卡片 - 确保始终创建并保留该部分
     if (analysisData.value?.risk_assessment) {
       const risk = analysisData.value.risk_assessment
       const riskSection = document.createElement('div')
@@ -1330,7 +1491,7 @@ const saveChartImage = async () => {
     urlDiv.style.color = '#60a5fa'
     urlDiv.style.fontWeight = 'bold'
     urlDiv.innerText = 'https://www.kxianjunshi.com'
-    qrDiv.appendChild(qrCanvas)
+    qrDiv.appendChild(urlDiv)
     container.appendChild(qrDiv)
 
     // 1. 先插入到页面
@@ -1345,7 +1506,15 @@ const saveChartImage = async () => {
       scale: 2,
       logging: false,
       width: 375,
-      height: container.offsetHeight
+      height: container.offsetHeight,
+      onclone: function(clonedDoc) {
+        // 确保克隆文档中的所有内容都已完全渲染
+        const clonedContainer = clonedDoc.body.querySelector('div')
+        if (clonedContainer) {
+          // 强制计算样式和布局
+          window.getComputedStyle(clonedContainer).getPropertyValue('height')
+        }
+      }
     })
 
     // 4. 移除临时节点
@@ -1357,10 +1526,25 @@ const saveChartImage = async () => {
     link.href = canvas.toDataURL('image/png')
     link.click()
   } catch (error) {
-    // 保存图片失败处理
+    console.error('保存图片失败:', error)
+    // 显示错误提示
+    ElMessage({
+      message: '保存图片失败，请重试',
+      type: 'error'
+    })
   }
 }
 
+// 获取图标背景色
+const getIndicatorBgColor = (trend?: string) => {
+  if (trend === 'bullish' || trend === '看涨' || trend === '支持当前趋势') {
+    return 'rgba(16,185,129,0.12)';
+  }
+  if (trend === 'bearish' || trend === '看跌' || trend === '反对当前趋势') {
+    return 'rgba(239,68,68,0.12)';
+  }
+  return 'rgba(156,163,175,0.12)'; // 中性
+}
 
 </script>
 

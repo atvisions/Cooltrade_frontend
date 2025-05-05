@@ -17,6 +17,11 @@
       <div class="max-w-[375px] mx-auto px-4">
         <h1 class="text-2xl font-bold text-center mb-8">注册</h1>
         
+        <!-- 一般性错误提示 -->
+        <div v-if="generalError" class="mb-4 p-3 bg-red-900/30 border border-red-800 rounded-lg text-red-400 text-sm">
+          {{ generalError }}
+        </div>
+        
         <form @submit.prevent="handleRegister" class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-400 mb-1">邮箱</label>
@@ -25,9 +30,14 @@
               v-model="formData.email"
               @input="handleEmailChange"
               required
-              class="w-full px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+              ref="emailInput"
+              :class="[
+                'w-full px-4 py-2 rounded-lg bg-gray-800 border focus:ring-1 outline-none', 
+                errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-700 focus:border-primary focus:ring-primary'
+              ]"
               placeholder="请输入邮箱"
             />
+            <p v-if="errors.email" class="mt-1 text-sm text-red-500">{{ errors.email }}</p>
           </div>
           
           <div>
@@ -37,9 +47,14 @@
               v-model="formData.password"
               @input="handlePasswordChange"
               required
-              class="w-full px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+              ref="passwordInput"
+              :class="[
+                'w-full px-4 py-2 rounded-lg bg-gray-800 border focus:ring-1 outline-none', 
+                errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-700 focus:border-primary focus:ring-primary'
+              ]"
               placeholder="请输入密码"
             />
+            <p v-if="errors.password" class="mt-1 text-sm text-red-500">{{ errors.password }}</p>
           </div>
 
           <div class="flex gap-2">
@@ -50,9 +65,14 @@
                 v-model="formData.code"
                 @input="handleCodeChange"
                 required
-                class="w-full px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                ref="codeInput"
+                :class="[
+                  'w-full px-4 py-2 rounded-lg bg-gray-800 border focus:ring-1 outline-none', 
+                  errors.code ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-700 focus:border-primary focus:ring-primary'
+                ]"
                 placeholder="请输入验证码"
               />
+              <p v-if="errors.code" class="mt-1 text-sm text-red-500">{{ errors.code }}</p>
             </div>
             <button
               type="button"
@@ -70,9 +90,14 @@
               type="text"
               v-model="formData.invitation_code"
               required
-              class="w-full px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+              ref="invitationCodeInput"
+              :class="[
+                'w-full px-4 py-2 rounded-lg bg-gray-800 border focus:ring-1 outline-none', 
+                errors.invitation_code ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-700 focus:border-primary focus:ring-primary'
+              ]"
               placeholder="请输入邀请码"
             />
+            <p v-if="errors.invitation_code" class="mt-1 text-sm text-red-500">{{ errors.invitation_code }}</p>
           </div>
           
           <button
@@ -110,6 +135,49 @@ const loading = ref(false)
 const isSendingCode = ref(false)
 const countdown = ref(0)
 
+// 添加错误提示相关状态
+const errors = ref({
+  email: '',
+  password: '',
+  code: '',
+  invitation_code: ''
+})
+const generalError = ref('')
+
+// 添加输入框的引用，方便定位错误
+const emailInput = ref<HTMLInputElement | null>(null)
+const passwordInput = ref<HTMLInputElement | null>(null)
+const codeInput = ref<HTMLInputElement | null>(null)
+const invitationCodeInput = ref<HTMLInputElement | null>(null)
+
+// 清除错误信息
+const clearErrors = () => {
+  errors.value = {
+    email: '',
+    password: '',
+    code: '',
+    invitation_code: ''
+  }
+  generalError.value = ''
+}
+
+// 对错误字段进行聚焦
+const focusErrorField = (field: 'email' | 'password' | 'code' | 'invitation_code') => {
+  const inputRefs = {
+    email: emailInput,
+    password: passwordInput,
+    code: codeInput,
+    invitation_code: invitationCodeInput
+  }
+  
+  const targetInput = inputRefs[field]
+  if (targetInput.value) {
+    setTimeout(() => {
+      targetInput.value?.focus()
+    }, 100)
+  }
+}
+
 // 保存表单数据到 localStorage
 const saveFormData = () => {
   localStorage.setItem('registerFormData', JSON.stringify({
@@ -130,16 +198,22 @@ const restoreFormData = () => {
   }
 }
 
-// 监听邮箱和密码的变化
+// 监听输入变化时清除对应字段的错误提示
 const handleEmailChange = () => {
+  errors.value.email = ''
+  generalError.value = ''
   saveFormData()
 }
 
 const handlePasswordChange = () => {
+  errors.value.password = ''
+  generalError.value = ''
   saveFormData()
 }
 
 const handleCodeChange = () => {
+  errors.value.code = ''
+  generalError.value = ''
   saveFormData()
 }
 
@@ -154,8 +228,11 @@ const startCountdown = () => {
 }
 
 const handleSendCode = async () => {
+  clearErrors()
+  
   if (!formData.value.email) {
-    alert('请输入邮箱')
+    errors.value.email = '请输入邮箱'
+    focusErrorField('email')
     return
   }
 
@@ -163,20 +240,63 @@ const handleSendCode = async () => {
   try {
     await auth.sendCode({ email: formData.value.email })
     startCountdown()
-  } catch (error) {
+  } catch (error: any) {
     console.error('发送验证码失败:', error)
-    alert('发送验证码失败')
+    if (error.response?.data?.message?.email) {
+      errors.value.email = error.response.data.message.email[0] || '邮箱格式错误'
+      focusErrorField('email')
+    } else if (error.response?.data?.message) {
+      generalError.value = typeof error.response.data.message === 'string' 
+        ? error.response.data.message 
+        : '发送验证码失败，请稍后重试'
+    } else {
+      generalError.value = '发送验证码失败，请稍后重试'
+    }
   } finally {
     isSendingCode.value = false
   }
 }
 
 const handleRegister = async () => {
-  if (!formData.value.email || !formData.value.password || !formData.value.code || !formData.value.invitation_code) {
-    alert('请填写所有必填字段')
-    return
+  clearErrors()
+  
+  // 表单验证
+  let hasError = false
+  
+  if (!formData.value.email) {
+    errors.value.email = '请输入邮箱'
+    if (!hasError) {
+      focusErrorField('email')
+      hasError = true
+    }
   }
-
+  
+  if (!formData.value.password) {
+    errors.value.password = '请输入密码'
+    if (!hasError) {
+      focusErrorField('password')
+      hasError = true
+    }
+  }
+  
+  if (!formData.value.code) {
+    errors.value.code = '请输入验证码'
+    if (!hasError) {
+      focusErrorField('code')
+      hasError = true
+    }
+  }
+  
+  if (!formData.value.invitation_code) {
+    errors.value.invitation_code = '请输入邀请码'
+    if (!hasError) {
+      focusErrorField('invitation_code')
+      hasError = true
+    }
+  }
+  
+  if (hasError) return
+  
   loading.value = true
   try {
     const requestData = {
@@ -196,17 +316,42 @@ const handleRegister = async () => {
     router.push('/login')
   } catch (error: any) {
     console.error('Registration failed:', error)
-    if (error.response?.data?.message?.code) {
-      // 显示验证码错误
-      alert(`验证码错误: ${error.response.data.message.code[0]}`)
-    } else if (error.response?.data?.message) {
-      // 显示其他错误信息
-      const errorMessages = Object.entries(error.response.data.message)
-        .map(([key, value]) => `${key}: ${Array.isArray(value) ? value[0] : value}`)
-        .join('\n')
-      alert(errorMessages)
+    if (error.response?.data?.message) {
+      const errorData = error.response.data.message
+      
+      // 处理各种字段的错误
+      if (typeof errorData === 'object') {
+        // 映射后端错误字段到前端表单字段
+        const fieldMap: Record<string, keyof typeof errors.value> = {
+          email: 'email',
+          password: 'password',
+          code: 'code',
+          invitation_code: 'invitation_code'
+        }
+        
+        let focusedFirst = false
+        
+        // 遍历错误字段并设置对应错误信息
+        Object.entries(errorData).forEach(([field, message]) => {
+          const formField = fieldMap[field]
+          if (formField) {
+            errors.value[formField] = Array.isArray(message) ? message[0] : message as string
+            
+            // 只聚焦第一个错误字段
+            if (!focusedFirst) {
+              focusErrorField(formField)
+              focusedFirst = true
+            }
+          } else {
+            // 不是表单字段的错误信息，放到通用错误中
+            generalError.value = Array.isArray(message) ? message[0] : message as string
+          }
+        })
+      } else if (typeof errorData === 'string') {
+        generalError.value = errorData
+      }
     } else {
-      alert('注册失败，请检查输入信息')
+      generalError.value = '注册失败，请检查输入信息'
     }
   } finally {
     loading.value = false
