@@ -20,8 +20,8 @@
             </div>
             <h2 class="text-lg font-semibold mb-2">未登录</h2>
             <p class="text-gray-400 text-sm mb-4">登录后查看个人中心</p>
-            <router-link 
-              to="/login" 
+            <router-link
+              to="/login"
               class="inline-block py-2 px-6 bg-gradient-to-r from-primary to-blue-500 text-white rounded-lg font-medium"
             >
               立即登录
@@ -48,23 +48,31 @@
 
           <!-- 功能列表 -->
           <div class="space-y-4">
-            <button class="w-full py-3 bg-gray-800 text-white rounded-lg font-medium flex items-center justify-center">
-              <i class="ri-settings-3-line mr-2"></i>
+            <router-link to="/change-password" class="w-full py-3 px-4 bg-gray-800 text-white rounded-lg font-medium flex items-center">
+              <i class="ri-lock-password-line mr-3"></i>
+              修改密码
+              <i class="ri-arrow-right-s-line ml-auto"></i>
+            </router-link>
+            <button class="w-full py-3 px-4 bg-gray-800 text-white rounded-lg font-medium flex items-center">
+              <i class="ri-settings-3-line mr-3"></i>
               设置
+              <i class="ri-arrow-right-s-line ml-auto"></i>
             </button>
-            <button class="w-full py-3 bg-gray-800 text-white rounded-lg font-medium flex items-center justify-center">
-              <i class="ri-question-line mr-2"></i>
+            <button class="w-full py-3 px-4 bg-gray-800 text-white rounded-lg font-medium flex items-center">
+              <i class="ri-question-line mr-3"></i>
               帮助与反馈
+              <i class="ri-arrow-right-s-line ml-auto"></i>
             </button>
-            <button class="w-full py-3 bg-gray-800 text-white rounded-lg font-medium flex items-center justify-center">
-              <i class="ri-information-line mr-2"></i>
+            <button class="w-full py-3 px-4 bg-gray-800 text-white rounded-lg font-medium flex items-center">
+              <i class="ri-information-line mr-3"></i>
               关于我们
+              <i class="ri-arrow-right-s-line ml-auto"></i>
             </button>
-            <button 
-              class="w-full py-3 bg-red-500 text-white rounded-lg font-medium flex items-center justify-center"
+            <button
+              class="w-full py-3 px-4 bg-red-500 text-white rounded-lg font-medium flex items-center"
               @click="handleLogout"
             >
-              <i class="ri-logout-box-line mr-2"></i>
+              <i class="ri-logout-box-line mr-3"></i>
               退出登录
             </button>
           </div>
@@ -94,6 +102,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/api'
+import axios from 'axios'
 
 const router = useRouter()
 const userInfo = ref({
@@ -121,23 +130,37 @@ const formatDate = (dateString: string) => {
 
 const fetchUserInfo = async () => {
   if (!isLoggedIn.value) return
-  
+
   try {
     // 先尝试从本地存储获取用户信息
     const savedUserInfo = localStorage.getItem('userInfo')
     if (savedUserInfo) {
       userInfo.value = JSON.parse(savedUserInfo)
     }
-    
+
     // 然后从服务器获取最新信息
-    const response = await api.get('/auth/profile/')
-    if (response?.status === 'success' && response?.data) {
-      userInfo.value = response.data
+    // 在开发环境中使用代理
+    const url = process.env.NODE_ENV !== 'production'
+      ? '/api/auth/profile/'
+      : `${api.defaults.baseURL}/auth/profile/`;
+
+
+
+    const response = await axios.get(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': localStorage.getItem('token') || ''
+      }
+    });
+
+    const data = response.data;
+    if (data?.status === 'success' && data?.data) {
+      userInfo.value = data.data;
       // 更新本地存储
-      localStorage.setItem('userInfo', JSON.stringify(response.data))
+      localStorage.setItem('userInfo', JSON.stringify(data.data));
     }
   } catch (error) {
-    console.error('获取用户信息失败:', error)
+    // 获取用户信息失败，使用本地存储的信息
   }
 }
 
@@ -152,4 +175,4 @@ const handleLogout = () => {
 onMounted(() => {
   fetchUserInfo()
 })
-</script> 
+</script>

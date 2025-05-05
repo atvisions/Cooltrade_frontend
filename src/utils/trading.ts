@@ -190,24 +190,16 @@ const exchanges: ExchangeInfo[] = [
  */
 export const parseSymbolFromUrl = (url: string): string | null => {
   try {
-    console.log('开始解析交易对符号，URL:', url);
-
     // 特殊处理MEXC期货URL
     if (url.includes('mexc.com') && url.includes('/futures/')) {
-      console.log('检测到MEXC期货URL');
-
       // 尝试直接从URL路径中提取交易对
       const pathMatch = url.match(/\/futures\/([A-Z0-9_]+)/i);
       if (pathMatch) {
-        console.log('MEXC期货URL匹配成功，捕获组:', pathMatch);
-
         // 从URL中提取交易对，格式为 /futures/BTC_USDT
         const tradingPair = pathMatch[1];
-        console.log('提取到交易对:', tradingPair);
 
         if (tradingPair.includes('_')) {
           const symbol = tradingPair.split('_')[0].toUpperCase();
-          console.log('最终解析出的交易对符号:', symbol + 'USDT');
           return symbol + 'USDT';
         }
       }
@@ -216,28 +208,19 @@ export const parseSymbolFromUrl = (url: string): string | null => {
     // 常规处理逻辑
     for (const ex of exchanges) {
       if (url.includes(ex.baseUrl)) {
-        console.log('检测到交易所:', ex.name);
-
         for (const regex of ex.symbolRegexes) {
-          console.log('尝试正则表达式:', regex);
-
           const matches = url.match(regex);
           if (matches) {
-            console.log('正则表达式匹配成功，捕获组:', matches);
-
             // 合并所有捕获组为 symbol
             const symbol = matches.slice(1).map(s => s.toUpperCase()).join('');
-            console.log('最终解析出的交易对符号:', symbol);
             return symbol;
           }
         }
       }
     }
 
-    console.log('未能解析出交易对符号');
     return null;
   } catch (e) {
-    console.error('解析交易对符号失败:', e)
     return null
   }
 }
@@ -248,7 +231,6 @@ export function isExchangeUrl(url: string): boolean {
 
     // 特殊处理MEXC期货URL
     if (urlObj.hostname.includes('mexc.com') && urlObj.pathname.includes('/futures/')) {
-      console.log('MEXC期货URL匹配成功:', url);
       return true;
     }
 
@@ -259,20 +241,16 @@ export function isExchangeUrl(url: string): boolean {
           urlObj.pathname.includes(pattern)
         );
         if (patternMatch) {
-          console.log('交易所URL匹配成功:', exchange.name, url);
           return true;
         }
       }
       return false;
     });
 
-    if (!result) {
-      console.log('URL不匹配任何交易所:', url, '主机名:', urlObj.hostname, '路径:', urlObj.pathname);
-    }
+
 
     return result;
   } catch (error) {
-    console.error('URL解析错误:', error);
     return false;
   }
 }

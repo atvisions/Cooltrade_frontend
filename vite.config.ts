@@ -25,7 +25,7 @@ export default defineConfig({
     open: true,
     proxy: {
       '/api': {
-        target: 'https://www.kxianjunshi.com',
+        target: 'http://192.168.3.16:8000',
         changeOrigin: true,
         secure: false,
         configure: (proxy, _options) => {

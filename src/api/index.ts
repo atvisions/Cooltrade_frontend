@@ -30,7 +30,7 @@ const getBaseUrl = (): string => {
   }
   // 如果是开发环境
   if (isDevelopment()) {
-    return '/api'
+    return 'http://192.168.3.16:8000/api'
   }
   // 生产环境
   return 'https://www.kxianjunshi.com/api'
@@ -87,7 +87,9 @@ const isAuthRequest = (url: string | undefined): boolean => {
   if (!url) return false;
   return url.includes('/auth/login') ||
          url.includes('/auth/register') ||
-         url.includes('/auth/send-code');
+         url.includes('/auth/send-code') ||
+         url.includes('/auth/request-password-reset') ||
+         url.includes('/auth/reset-password-with-code');
 }
 
 // 检查请求限制
@@ -325,6 +327,7 @@ api.interceptors.response.use(
 
 interface LoginResponse {
   status: string;
+  message?: string;
   data: {
     token: string;
     user: {
@@ -338,18 +341,109 @@ interface LoginResponse {
 
 export const auth = {
   sendCode: (data: { email: string }) => {
-    return api.post('/auth/send-code/', data)
+    // 在开发环境中使用代理
+    const url = isDevelopment()
+      ? '/api/auth/send-code/'
+      : `${getBaseUrl()}/auth/send-code/`;
+
+
+
+    return axios.post(url, {
+      email: data.email.trim()
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).then(response => response.data)
   },
   register: (data: { email: string; password: string; code: string; invitation_code: string }) => {
-    return api.post('/auth/register/', {
+    // 在开发环境中使用代理
+    const url = isDevelopment()
+      ? '/api/auth/register/'
+      : `${getBaseUrl()}/auth/register/`;
+
+
+
+    return axios.post(url, {
       email: data.email.trim(),
       password: data.password.trim(),
       code: data.code.trim(),
       invitation_code: data.invitation_code.trim()
-    })
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).then(response => response.data)
   },
   login: (data: { email: string; password: string }): Promise<LoginResponse> => {
-    return api.post('/auth/login/', data)
+    // 在开发环境中使用代理
+    const url = isDevelopment()
+      ? '/api/auth/login/'
+      : `${getBaseUrl()}/auth/login/`;
+
+
+
+    return axios.post(url, {
+      email: data.email.trim(),
+      password: data.password.trim()
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).then(response => response.data)
+  },
+  requestPasswordReset: (data: { email: string }) => {
+    // 在开发环境中使用代理
+    const url = isDevelopment()
+      ? '/api/auth/request-password-reset/'
+      : `${getBaseUrl()}/auth/request-password-reset/`;
+
+
+
+    return axios.post(url, {
+      email: data.email.trim()
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).then(response => response.data)
+  },
+  resetPasswordWithCode: (data: { email: string; code: string; new_password: string; confirm_password: string }) => {
+    // 在开发环境中使用代理
+    const url = isDevelopment()
+      ? '/api/auth/reset-password-with-code/'
+      : `${getBaseUrl()}/auth/reset-password-with-code/`;
+
+
+
+    return axios.post(url, {
+      email: data.email.trim(),
+      code: data.code.trim(),
+      new_password: data.new_password.trim(),
+      confirm_password: data.confirm_password.trim()
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).then(response => response.data)
+  },
+
+  changePassword: (data: { current_password: string; new_password: string; confirm_password: string }) => {
+    // 在开发环境中使用代理
+    const url = isDevelopment()
+      ? '/api/auth/change-password/'
+      : `${getBaseUrl()}/auth/change-password/`;
+
+    return axios.post(url, {
+      current_password: data.current_password.trim(),
+      new_password: data.new_password.trim(),
+      confirm_password: data.confirm_password.trim()
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': localStorage.getItem('token') || ''
+      }
+    }).then(response => response.data)
   }
 }
 
@@ -470,7 +564,6 @@ export const getTechnicalAnalysis = async (
   symbol: string,
   forceRefresh: boolean = false
 ): Promise<FormattedTechnicalAnalysisData> => {
-  console.log(`开始请求技术分析数据 - 币种:${symbol}, 强制刷新:${forceRefresh}`)
   try {
     // 确保symbol是大写的
     const normalizedSymbol = symbol.toUpperCase();
@@ -479,75 +572,55 @@ export const getTechnicalAnalysis = async (
     const fullSymbol = normalizedSymbol.endsWith('USDT')
       ? normalizedSymbol
       : `${normalizedSymbol}USDT`;
-    
-    console.log(`规范化后的交易对: ${fullSymbol}`)
-    
+
     // 构建请求路径
     const path = `/crypto/technical-indicators/${fullSymbol}/`
-    
+
     // 准备查询参数
     const params: Record<string, any> = {}
     if (forceRefresh) {
       params.force_refresh = true
-      console.log('设置强制刷新参数')
     }
-    
-    console.log(`发送API请求: ${path}, 参数:`, params)
-    
+
+    // 在开发环境中使用代理
+    const url = isDevelopment()
+      ? `/api${path}`
+      : `${getBaseUrl()}${path}`;
+
     // 发送请求
-    const response = await api.get(path, { params })
-    console.log('API响应状态码:', response.status)
-    
-    // 检查响应格式 - 记录详细信息
+    const response = await axios.get(url, {
+      params,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': localStorage.getItem('token') || ''
+      }
+    })
+    // 检查响应格式
     const data = response.data
-    console.log('API响应数据类型:', typeof data)
-    
+
     if (typeof data === 'object') {
-      console.log('API响应数据结构:', Object.keys(data))
-      
       // 检查是否是特殊响应格式
       if ('status' in data) {
-        console.log('检测到状态字段, 值:', data.status)
-        
         if (data.status === 'not_found') {
-          console.log('API响应: 代币未找到, 需要刷新:', data.needs_refresh)
           return data as unknown as FormattedTechnicalAnalysisData
         }
-        
+
         if (data.status === 'success' && 'data' in data) {
-          console.log('API响应: 成功带数据字段, 返回data内容')
           return data.data
         }
       }
     }
-    
+
     // 假设响应是直接的技术分析数据，则格式化并返回
-    console.log('返回原始响应数据')
-    return response.data
+    return data
   } catch (error: any) {
-    // 增强错误日志
-    console.error('技术分析数据请求失败:', error)
-    
-    if (error.response) {
-      // 服务器响应了错误状态码
-      console.error('服务器错误响应:', {
-        status: error.response.status,
-        headers: error.response.headers,
-        data: error.response.data
-      })
-    } else if (error.request) {
-      // 请求发送了但没有收到响应
-      console.error('未收到服务器响应:', error.request)
-    } else {
-      // 请求设置出错
-      console.error('请求设置错误:', error.message)
-    }
-    
+    // 错误处理
+
     // 网络错误重新格式化为更友好的消息
     if (error.code === 'ERR_NETWORK') {
       throw new Error('网络连接错误，请检查您的网络连接')
     }
-    
+
     throw error
   }
 }
