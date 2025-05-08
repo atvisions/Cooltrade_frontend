@@ -58,11 +58,15 @@
               设置
               <i class="ri-arrow-right-s-line ml-auto"></i>
             </button>
-            <button class="w-full py-3 px-4 bg-gray-800 text-white rounded-lg font-medium flex items-center">
-              <i class="ri-question-line mr-3"></i>
-              帮助与反馈
-              <i class="ri-arrow-right-s-line ml-auto"></i>
-            </button>
+            <a 
+              href="https://www.kxianjunshi.com/privacy-policy/" 
+              target="_blank"
+              class="w-full py-3 px-4 bg-gray-800 text-white rounded-lg font-medium flex items-center"
+            >
+              <i class="ri-shield-check-line mr-3"></i>
+              隐私政策
+              <i class="ri-external-link-line ml-auto"></i>
+            </a>
             <button class="w-full py-3 px-4 bg-gray-800 text-white rounded-lg font-medium flex items-center">
               <i class="ri-information-line mr-3"></i>
               关于我们
