@@ -73,6 +73,7 @@ export function formatTechnicalAnalysisData(
         // 创建格式化后的数据对象，添加默认值和类型检查
         const formattedData: FormattedTechnicalAnalysisData = {
           current_price: typeof response.current_price === 'number' ? response.current_price : 0,
+          snapshot_price: typeof response.snapshot_price === 'number' ? response.snapshot_price : (typeof response.current_price === 'number' ? response.current_price : 0),
           trend_analysis: {
             probabilities: {
               up: typeof response.trend_up_probability === 'number' ? response.trend_up_probability : 0,
@@ -109,6 +110,7 @@ export function formatTechnicalAnalysisData(
         // 创建格式化后的数据对象，添加默认值和类型检查
         const formattedData: FormattedTechnicalAnalysisData = {
           current_price: typeof response.current_price === 'number' ? response.current_price : 0,
+          snapshot_price: typeof response.snapshot_price === 'number' ? response.snapshot_price : (typeof response.current_price === 'number' ? response.current_price : 0),
           trend_analysis: {
             probabilities: {
               up: typeof response.trend_analysis?.probabilities?.up === 'number' ? response.trend_analysis.probabilities.up : 0,
@@ -145,6 +147,7 @@ export function formatTechnicalAnalysisData(
     // 返回一个默认的数据结构，避免UI崩溃
     return {
       current_price: 0,
+      snapshot_price: 0,
       trend_analysis: {
         probabilities: { up: 0.33, sideways: 0.34, down: 0.33 },
         summary: '数据加载失败，请刷新重试'

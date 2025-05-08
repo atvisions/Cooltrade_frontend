@@ -116,9 +116,9 @@
       <div v-else-if="analysisData" class="max-w-[375px] mx-auto px-4 pb-16">
         <!-- 价格展示卡片 -->
         <div class="mt-6 p-5 rounded-lg bg-gradient-to-b from-gray-800/60 to-gray-900/60 border border-gray-700/50 shadow-lg">
-          <h2 class="text-center text-gray-400 mb-1">当前价格</h2>
+          <h2 class="text-center text-gray-400 mb-1">分析报告生成时价格</h2>
           <div class="text-center text-3xl font-bold mb-2">
-            {{ formatPrice(realtimePrice || analysisData.current_price) }}
+            {{ formatPrice(analysisData.snapshot_price) }}
             <span class="text-sm text-gray-400">USD</span>
           </div>
 
@@ -552,7 +552,6 @@ const error = ref<string | null>(null)
 const currentSymbol = ref<string>('')
 const retryCount = ref(0)
 const isTokenNotFound = ref(false) // 用于标记代币是否未找到（404错误）
-const realtimePrice = ref<number | null>(null)
 
 const showRefreshModal = ref(false)
 const refreshProgress = ref(0)
@@ -718,6 +717,18 @@ const loadAnalysisData = async (forceRefresh: boolean = false) => {
 
           // 确保数据格式化，填充可能缺失的字段
           const formattedData = formatTechnicalAnalysisData(response)
+          
+          // 调试日志
+          console.log('原始API响应:', response);
+          console.log('格式化后的数据:', formattedData);
+          console.log('格式化前的价格数据:', {
+            current_price: response.current_price,
+            snapshot_price: response.snapshot_price
+          });
+          console.log('格式化后的价格数据:', {
+            current_price: formattedData.current_price,
+            snapshot_price: formattedData.snapshot_price
+          });
 
           // 更新分析数据
           analysisData.value = formattedData

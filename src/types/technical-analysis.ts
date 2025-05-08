@@ -75,6 +75,7 @@ export interface TechnicalAnalysisData {
     details: string[];
   };
   current_price: number;
+  snapshot_price: number;
   last_update_time: string;
 }
 
@@ -97,6 +98,7 @@ export interface ForceRefreshData {
   risk_score: number;
   risk_details: string[];
   current_price: number;
+  snapshot_price: number;
   last_update_time: string;
 }
 
@@ -106,6 +108,7 @@ export interface ForceRefreshResponse extends ApiResponse<ForceRefreshData> {}
 // 前端统一格式
 export interface FormattedTechnicalAnalysisData {
   current_price: number;
+  snapshot_price: number;
   trend_analysis: {
     probabilities: {
       up: number;
