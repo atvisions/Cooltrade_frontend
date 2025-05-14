@@ -4,10 +4,10 @@
     <header class="fixed top-0 w-full z-10 bg-[#0F172A]/95 backdrop-blur-md border-b border-gray-800">
       <div class="max-w-[375px] mx-auto">
         <div class="flex items-center px-4 py-3">
-          <button @click="router.push('/login')" class="mr-2">
+          <button @click="goToLogin()" class="mr-2">
             <i class="ri-arrow-left-line ri-lg"></i>
           </button>
-          <h1 class="text-lg font-semibold">忘记密码</h1>
+          <h1 class="text-lg font-semibold">{{ t('auth.forgot_password') }}</h1>
         </div>
       </div>
     </header>
@@ -15,7 +15,7 @@
     <!-- 主要内容区域 -->
     <main class="flex-1 pt-16 pb-16">
       <div class="max-w-[375px] mx-auto px-4">
-  
+
         <!-- 一般性错误提示 -->
         <div v-if="generalError" class="mb-4 p-3 bg-red-900/30 border border-red-800 rounded-lg text-red-400 text-sm">
           {{ generalError }}
@@ -23,7 +23,7 @@
 
         <form @submit.prevent="handleResetPassword" class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-400 mb-1">邮箱</label>
+            <label class="block text-sm font-medium text-gray-400 mb-1">{{ t('auth.email') }}</label>
             <input
               type="email"
               v-model="formData.email"
@@ -34,14 +34,14 @@
                 'w-full px-4 py-2 rounded-lg bg-gray-800 border focus:ring-1 outline-none',
                 errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-700 focus:border-primary focus:ring-primary'
               ]"
-              placeholder="请输入邮箱"
+              :placeholder="t('auth.email_placeholder')"
             />
             <p v-if="errors.email" class="mt-1 text-sm text-red-500">{{ errors.email }}</p>
            </div>
 
           <div class="flex gap-2">
             <div class="flex-1">
-              <label class="block text-sm font-medium text-gray-400 mb-1">验证码</label>
+              <label class="block text-sm font-medium text-gray-400 mb-1">{{ t('auth.verification_code') }}</label>
               <input
                 type="text"
                 v-model="formData.code"
@@ -52,7 +52,7 @@
                   'w-full px-4 py-2 rounded-lg bg-gray-800 border focus:ring-1 outline-none',
                   errors.code ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-700 focus:border-primary focus:ring-primary'
                 ]"
-                placeholder="请输入验证码"
+                :placeholder="t('auth.verification_code_placeholder')"
               />
               <p v-if="errors.code" class="mt-1 text-sm text-red-500">{{ errors.code }}</p>
             </div>
@@ -62,12 +62,12 @@
               :disabled="isSendingCode || countdown > 0"
               class="mt-6 px-4 py-2 bg-gray-800 text-white rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{ countdown > 0 ? `${countdown}s后重试` : (isSendingCode ? '发送中...' : '获取验证码') }}
+              {{ countdown > 0 ? t('auth.retry_in_seconds', { seconds: countdown }) : (isSendingCode ? t('common.sending') : t('auth.send_code')) }}
             </button>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-400 mb-1">新密码</label>
+            <label class="block text-sm font-medium text-gray-400 mb-1">{{ t('auth.new_password') }}</label>
             <input
               type="password"
               v-model="formData.new_password"
@@ -78,14 +78,14 @@
                 'w-full px-4 py-2 rounded-lg bg-gray-800 border focus:ring-1 outline-none',
                 errors.new_password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-700 focus:border-primary focus:ring-primary'
               ]"
-              placeholder="请输入新密码"
+              :placeholder="t('auth.new_password_placeholder')"
             />
             <p v-if="errors.new_password" class="mt-1 text-sm text-red-500">{{ errors.new_password }}</p>
-            <p class="mt-1 text-xs text-gray-500">密码至少6位，包含字母和数字</p>
+            <p class="mt-1 text-xs text-gray-500">{{ t('auth.password_requirements') }}</p>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-400 mb-1">确认密码</label>
+            <label class="block text-sm font-medium text-gray-400 mb-1">{{ t('auth.confirm_new_password') }}</label>
             <input
               type="password"
               v-model="formData.confirm_password"
@@ -96,7 +96,7 @@
                 'w-full px-4 py-2 rounded-lg bg-gray-800 border focus:ring-1 outline-none',
                 errors.confirm_password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-700 focus:border-primary focus:ring-primary'
               ]"
-              placeholder="请再次输入新密码"
+              :placeholder="t('auth.confirm_new_password_placeholder')"
             />
             <p v-if="errors.confirm_password" class="mt-1 text-sm text-red-500">{{ errors.confirm_password }}</p>
           </div>
@@ -106,7 +106,7 @@
             class="w-full py-3 bg-gradient-to-r from-primary to-blue-500 text-white rounded-lg font-medium"
             :disabled="loading"
           >
-            {{ loading ? '重置中...' : '重置密码' }}
+            {{ loading ? t('auth.resetting') : t('auth.reset_password') }}
           </button>
         </form>
 
@@ -118,21 +118,21 @@
                 <i class="ri-check-line ri-2x text-green-500"></i>
               </div>
             </div>
-            <h2 class="text-xl font-semibold mb-2 text-center">密码重置成功</h2>
-            <p class="text-gray-400 mb-6 text-center">您的密码已成功重置，请使用新密码登录。</p>
+            <h2 class="text-xl font-semibold mb-2 text-center">{{ t('auth.reset_success') }}</h2>
+            <p class="text-gray-400 mb-6 text-center">{{ t('auth.reset_success_message') }}</p>
             <button
               @click="handleSuccessModalClose"
               class="w-full py-3 bg-gradient-to-r from-primary to-blue-500 text-white rounded-lg font-medium"
             >
-              返回登录
+              {{ t('auth.back_to_login') }}
             </button>
           </div>
         </div>
 
         <div class="mt-6 text-center">
-          <router-link to="/login" class="text-primary hover:underline">
-            返回登录
-          </router-link>
+          <a href="#" @click.prevent="goToLogin()" class="text-primary hover:underline">
+            {{ t('auth.back_to_login') }}
+          </a>
         </div>
       </div>
     </main>
@@ -141,10 +141,15 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { auth } from '@/api'
+import * as ExtensionRouter from '@/utils/extension-router'
+import { useEnhancedI18n } from '@/utils/i18n-helper'
 
-const router = useRouter()
+// 使用增强的 i18n
+const { t } = useEnhancedI18n()
+
+// 路由辅助函数
+const goToLogin = () => ExtensionRouter.goToLogin()
 const loading = ref(false)
 const isSendingCode = ref(false)
 const countdown = ref(0)
@@ -259,7 +264,7 @@ const handleSendCode = async () => {
   clearErrors()
 
   if (!formData.value.email) {
-    errors.value.email = '请输入邮箱'
+    errors.value.email = t('errors.email_required')
     focusErrorField('email')
     return
   }
@@ -277,7 +282,7 @@ const handleSendCode = async () => {
       startCountdown()
       generalError.value = ''
     } else {
-      generalError.value = response.message || '发送验证码失败，请稍后重试'
+      generalError.value = response.message || t('errors.send_code_failed')
     }
   } catch (error: any) {
     console.error('发送验证码失败:', error)
@@ -304,19 +309,18 @@ const handleSendCode = async () => {
             ? error.response.data.detail
             : JSON.stringify(error.response.data.detail)
         } else {
-          generalError.value = '服务器邮件发送功能超时，请联系管理员或稍后再试'
+          generalError.value = t('errors.server_timeout')
         }
       } else {
-        generalError.value = '服务器邮件发送功能超时，请联系管理员或稍后再试'
+        generalError.value = t('errors.server_timeout')
       }
     }
 
-    // 这部分代码已经被上面的错误处理逻辑替代，可以删除
     if (error.response?.status === 404) {
-      errors.value.email = '该邮箱未注册'
+      errors.value.email = t('errors.email_not_registered')
       focusErrorField('email')
     } else if (error.code === 'ECONNABORTED') {
-      generalError.value = '网络连接超时，请检查网络'
+      generalError.value = t('errors.network_timeout')
     }
   } finally {
     isSendingCode.value = false
@@ -330,7 +334,7 @@ const handleResetPassword = async () => {
   let hasError = false
 
   if (!formData.value.email) {
-    errors.value.email = '请输入邮箱'
+    errors.value.email = t('errors.email_required')
     if (!hasError) {
       focusErrorField('email')
       hasError = true
@@ -338,7 +342,7 @@ const handleResetPassword = async () => {
   }
 
   if (!formData.value.code) {
-    errors.value.code = '请输入验证码'
+    errors.value.code = t('errors.verification_code_required')
     if (!hasError) {
       focusErrorField('code')
       hasError = true
@@ -346,7 +350,7 @@ const handleResetPassword = async () => {
   }
 
   if (!formData.value.new_password) {
-    errors.value.new_password = '请输入新密码'
+    errors.value.new_password = t('errors.password_required')
     if (!hasError) {
       focusErrorField('new_password')
       hasError = true
@@ -356,13 +360,13 @@ const handleResetPassword = async () => {
     const hasLetter = /[A-Za-z]/.test(formData.value.new_password)
     const hasNumber = /[0-9]/.test(formData.value.new_password)
     if (formData.value.new_password.length < 6) {
-      errors.value.new_password = '密码长度至少为6位'
+      errors.value.new_password = t('errors.password_too_short')
       if (!hasError) {
         focusErrorField('new_password')
         hasError = true
       }
     } else if (!hasLetter || !hasNumber) {
-      errors.value.new_password = '密码必须包含字母和数字'
+      errors.value.new_password = t('errors.password_must_contain_letters_numbers')
       if (!hasError) {
         focusErrorField('new_password')
         hasError = true
@@ -371,13 +375,13 @@ const handleResetPassword = async () => {
   }
 
   if (!formData.value.confirm_password) {
-    errors.value.confirm_password = '请确认密码'
+    errors.value.confirm_password = t('errors.password_required')
     if (!hasError) {
       focusErrorField('confirm_password')
       hasError = true
     }
   } else if (formData.value.new_password !== formData.value.confirm_password) {
-    errors.value.confirm_password = '两次输入的密码不一致'
+    errors.value.confirm_password = t('errors.passwords_not_match')
     if (!hasError) {
       focusErrorField('confirm_password')
       hasError = true
@@ -410,7 +414,7 @@ const handleResetPassword = async () => {
       // 显示成功弹窗
       showSuccessModal.value = true
     } else {
-      generalError.value = response.message || '重置密码失败，请稍后重试'
+      generalError.value = response.message || t('errors.password_change_failed')
     }
   } catch (error: any) {
     console.error('重置密码失败:', error)
@@ -437,10 +441,10 @@ const handleResetPassword = async () => {
             ? error.response.data.detail
             : JSON.stringify(error.response.data.detail)
         } else {
-          generalError.value = '服务器邮件发送功能超时，请联系管理员或稍后再试'
+          generalError.value = t('errors.server_timeout')
         }
       } else {
-        generalError.value = '服务器邮件发送功能超时，请联系管理员或稍后再试'
+        generalError.value = t('errors.server_timeout')
       }
     }
 
@@ -453,11 +457,11 @@ const handleResetPassword = async () => {
           : error.response.data.message.code
         focusErrorField('code')
       } else {
-        errors.value.code = '验证码无效或已过期'
+        errors.value.code = t('errors.invalid_code')
         focusErrorField('code')
       }
     } else if (error.code === 'ECONNABORTED') {
-      generalError.value = '网络连接超时，请检查网络'
+      generalError.value = t('errors.network_timeout')
     }
   } finally {
     loading.value = false
@@ -466,7 +470,7 @@ const handleResetPassword = async () => {
 
 const handleSuccessModalClose = () => {
   showSuccessModal.value = false
-  router.push('/login')
+  goToLogin()
 }
 
 // 组件挂载时恢复表单数据

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>K线军师</title>
+    <title>Cooltrade</title>
     <style>
       html, body {
         width: 375px;
@@ -19,7 +19,19 @@
         overflow: hidden;
       }
     </style>
-    <script type="module" src="/src/main.ts"></script>
+    <script>
+      // 添加调试信息，帮助确认语言文件是否正确加载
+      window.i18nDebug = {
+        loaded: false,
+        languages: [],
+        currentLocale: '',
+        error: null
+      };
+
+      // 在控制台中输出调试信息
+      console.log('I18n debug initialized');
+    </script>
+    <script type="module" src="./src/main.ts"></script>
     <link rel="stylesheet" crossorigin href="./assets/main.css">
   </head>
   <body>

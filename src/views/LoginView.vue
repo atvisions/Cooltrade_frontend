@@ -7,7 +7,7 @@
           <button @click="router.push('/')" class="mr-2">
             <i class="ri-arrow-left-line ri-lg"></i>
           </button>
-          <h1 class="text-lg font-semibold">登录</h1>
+          <h1 class="text-lg font-semibold">{{ t('auth.login') }}</h1>
         </div>
       </div>
     </header>
@@ -21,7 +21,7 @@
           </div>
 
           <div>
-            <label for="email" class="block text-sm font-medium text-gray-300 mb-1">邮箱</label>
+            <label for="email" class="block text-sm font-medium text-gray-300 mb-1">{{ t('auth.email') }}</label>
             <input
               id="email"
               v-model="formData.email"
@@ -33,8 +33,8 @@
 
           <div>
             <div class="flex justify-between items-center mb-1">
-              <label for="password" class="block text-sm font-medium text-gray-300">密码</label>
-              <router-link to="/forgot-password" class="text-xs text-primary hover:underline">忘记密码？</router-link>
+              <label for="password" class="block text-sm font-medium text-gray-300">{{ t('auth.password') }}</label>
+              <a href="#" @click.prevent="goToForgotPassword" class="text-xs text-primary hover:underline">{{ t('auth.forgot_password') }}</a>
             </div>
             <input
               id="password"
@@ -50,14 +50,14 @@
             class="w-full py-3 bg-gradient-to-r from-primary to-blue-500 text-white rounded-lg font-medium"
             :disabled="loading"
           >
-            {{ loading ? '登录中...' : '登录' }}
+            {{ loading ? t('common.loading') : t('auth.login') }}
           </button>
         </form>
 
         <div class="mt-6 text-center">
           <p class="text-sm text-gray-400">
-            还没有账号？
-            <router-link to="/register" class="text-primary hover:underline">立即注册</router-link>
+            {{ t('auth.no_account') }}
+            <a href="#" @click.prevent="goToRegister" class="text-primary hover:underline">{{ t('auth.register_now') }}</a>
           </p>
         </div>
       </div>
@@ -66,12 +66,31 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { auth } from '@/api'
+import axios from 'axios'
+import * as ExtensionRouter from '@/utils/extension-router'
+import { useEnhancedI18n } from '@/utils/i18n-helper'
+
+// 使用增强的 i18n
+const { t } = useEnhancedI18n()
+
+// 测试翻译是否正常工作
+onMounted(() => {
+  try {
+    const testTranslation = t('auth.login')
+    console.log('Test translation:', testTranslation)
+  } catch (e) {
+    console.error('Error using i18n:', e)
+  }
+})
 
 const router = useRouter()
 const route = useRoute()
+
+// 路由辅助函数
+const goToForgotPassword = () => ExtensionRouter.goToForgotPassword()
+const goToRegister = () => ExtensionRouter.goToRegister()
 const formData = ref({
   email: '',
   password: ''
@@ -83,24 +102,42 @@ const handleLogin = async () => {
   error.value = null
 
   if (!formData.value.email || !formData.value.password) {
-    error.value = '请填写所有必填字段'
+    error.value = t('errors.fill_all_fields')
     return
   }
 
   loading.value = true
   try {
-    const response = await auth.login({
+    // 使用相对路径，让 Vite 的代理服务器处理请求
+    const url = '/api/auth/login/';
+    console.log('Login URL:', url);
+
+    // 准备请求数据
+    const requestData = {
       email: formData.value.email.trim(),
       password: formData.value.password.trim()
-    })
+    };
 
-    console.log('登录响应:', response)
+    console.log('Request data:', requestData);
+
+    // 将对象转换为 JSON 字符串，确保格式与 curl 请求一致
+    const jsonData = JSON.stringify(requestData);
+    console.log('JSON data:', jsonData);
+
+    const response = await axios.post(url, jsonData, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const data = response.data;
+    console.log('Login response:', data);
 
     // 检查响应格式
-    if (response.status === 'success' && response.data) {
+    if (data.status === 'success' && data.data) {
       // 保存 token
-      const token = response.data.token
-      const userData = response.data.user
+      const token = data.data.token
+      const userData = data.data.user
 
       if (token) {
         // 添加Token前缀
@@ -111,20 +148,15 @@ const handleLogin = async () => {
           localStorage.setItem('userInfo', JSON.stringify(userData))
         }
 
-        // 输出调试信息
-        console.log('已保存token:', localStorage.getItem('token'))
-        console.log('已保存用户信息:', localStorage.getItem('userInfo'))
-
         // 跳转到重定向页面或首页
         const redirectPath = route.query.redirect as string || '/'
         router.push(redirectPath)
       } else {
-        console.error('Token未找到', response)
-        error.value = '登录失败：未获取到 token'
+        error.value = t('errors.login_failed_no_token')
       }
     } else {
-      console.error('登录响应格式错误', response)
-      error.value = response.message || '登录失败：服务器响应格式错误'
+      console.error('登录响应格式错误', data)
+      error.value = data.message || t('errors.login_failed_server_error')
     }
   } catch (err: any) {
     console.error('登录失败:', err)
@@ -136,9 +168,6 @@ const handleLogin = async () => {
         data: err.response.data,
         headers: err.response.headers
       })
-
-      // 显示服务器返回的详细错误信息
-      console.log('服务器错误详情:', JSON.stringify(err.response.data, null, 2))
     }
 
     if (err.response?.data?.message) {
@@ -148,7 +177,7 @@ const handleLogin = async () => {
         if (messages.length > 0) {
           error.value = messages[0] as string;
         } else {
-          error.value = '登录失败，请检查输入';
+          error.value = t('errors.login_failed_check_input');
         }
       } else {
         error.value = err.response.data.message;
@@ -156,13 +185,13 @@ const handleLogin = async () => {
     } else if (err.response?.data?.detail) {
       error.value = err.response.data.detail;
     } else if (err.response?.status === 401) {
-      error.value = '邮箱或密码错误';
+      error.value = t('errors.invalid_credentials');
     } else if (err.response?.status === 429) {
-      error.value = '登录尝试次数过多，请稍后再试';
+      error.value = t('errors.too_many_attempts');
     } else if (err.code === 'ECONNABORTED') {
-      error.value = '网络连接超时，请检查网络';
+      error.value = t('errors.network_timeout');
     } else {
-      error.value = '登录失败，请稍后重试';
+      error.value = t('errors.login_failed_try_later');
     }
   } finally {
     loading.value = false

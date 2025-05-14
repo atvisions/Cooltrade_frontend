@@ -24,16 +24,16 @@ const isDevelopment = (): boolean => {
 
 // 获取基础 URL
 const getBaseUrl = (): string => {
-  // 如果是扩展环境
+  // 如果是扩展环境，总是使用线上 API
   if (isExtensionEnvironment()) {
-    return 'https://www.kxianjunshi.com/api'
+    return 'https://www.cooltrade.xyz/api'
   }
-  // 如果是开发环境
+  // 如果是开发环境，使用相对路径，让 Vite 的代理服务器处理请求
   if (isDevelopment()) {
-    return 'http://192.168.3.16:8000/api'
+    return '/api'
   }
   // 生产环境
-  return 'https://www.kxianjunshi.com/api'
+  return 'https://www.cooltrade.xyz/api'
 }
 
 // 创建axios实例
@@ -340,28 +340,21 @@ interface LoginResponse {
 }
 
 export const auth = {
-  sendCode: (data: { email: string }) => {
-    // 在开发环境中使用代理
-    const url = isDevelopment()
-      ? '/api/auth/send-code/'
-      : `${getBaseUrl()}/auth/send-code/`;
-
-
-
-    return axios.post(url, {
-      email: data.email.trim()
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).then(response => response.data)
+  sendCode: async (data: { email: string }) => {
+    try {
+      // 使用 API 实例而不是直接使用 axios
+      const response = await api.post('/auth/send-code/', {
+        email: data.email.trim()
+      });
+      return response;
+    } catch (error) {
+      console.error('Send code error:', error);
+      throw error;
+    }
   },
   register: (data: { email: string; password: string; code: string; invitation_code: string }) => {
-    // 在开发环境中使用代理
-    const url = isDevelopment()
-      ? '/api/auth/register/'
-      : `${getBaseUrl()}/auth/register/`;
-
+    // 使用基础 URL
+    const url = `${getBaseUrl()}/auth/register/`;
 
 
     return axios.post(url, {
@@ -375,28 +368,38 @@ export const auth = {
       }
     }).then(response => response.data)
   },
-  login: (data: { email: string; password: string }): Promise<LoginResponse> => {
-    // 在开发环境中使用代理
-    const url = isDevelopment()
-      ? '/api/auth/login/'
-      : `${getBaseUrl()}/auth/login/`;
+  login: async (data: { email: string; password: string }): Promise<LoginResponse> => {
+    try {
+      // 使用基础 URL
+      const url = `${getBaseUrl()}/auth/login/`;
+      console.log('Login URL:', url);
+      console.log('Request Config:', {
+        url: '/auth/login/',
+        method: 'post',
+        data: {
+          email: data.email.trim(),
+          password: data.password.trim()
+        }
+      });
 
+      const response = await axios.post(url, {
+        email: data.email.trim(),
+        password: data.password.trim()
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
 
-
-    return axios.post(url, {
-      email: data.email.trim(),
-      password: data.password.trim()
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).then(response => response.data)
+      return response.data;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
   },
   requestPasswordReset: (data: { email: string }) => {
-    // 在开发环境中使用代理
-    const url = isDevelopment()
-      ? '/api/auth/request-password-reset/'
-      : `${getBaseUrl()}/auth/request-password-reset/`;
+    // 使用基础 URL
+    const url = `${getBaseUrl()}/auth/request-password-reset/`;
 
 
 
@@ -409,10 +412,8 @@ export const auth = {
     }).then(response => response.data)
   },
   resetPasswordWithCode: (data: { email: string; code: string; new_password: string; confirm_password: string }) => {
-    // 在开发环境中使用代理
-    const url = isDevelopment()
-      ? '/api/auth/reset-password-with-code/'
-      : `${getBaseUrl()}/auth/reset-password-with-code/`;
+    // 使用基础 URL
+    const url = `${getBaseUrl()}/auth/reset-password-with-code/`;
 
 
 
@@ -429,10 +430,8 @@ export const auth = {
   },
 
   changePassword: (data: { current_password: string; new_password: string; confirm_password: string }) => {
-    // 在开发环境中使用代理
-    const url = isDevelopment()
-      ? '/api/auth/change-password/'
-      : `${getBaseUrl()}/auth/change-password/`;
+    // 使用基础 URL
+    const url = `${getBaseUrl()}/auth/change-password/`;
 
     return axios.post(url, {
       current_password: data.current_password.trim(),
@@ -582,10 +581,8 @@ export const getTechnicalAnalysis = async (
       params.force_refresh = true
     }
 
-    // 在开发环境中使用代理
-    const url = isDevelopment()
-      ? `/api${path}`
-      : `${getBaseUrl()}${path}`;
+    // 使用基础 URL
+    const url = `${getBaseUrl()}${path}`;
 
     // 发送请求
     const response = await axios.get(url, {

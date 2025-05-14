@@ -1,4 +1,11 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
+// 直接导入组件，不使用懒加载
+import HomeView from '../views/HomeView.vue'
+import LoginView from '../views/LoginView.vue'
+import RegisterView from '../views/RegisterView.vue'
+import ProfileView from '../views/ProfileView.vue'
+import ForgotPasswordView from '../views/ForgotPasswordView.vue'
+import ChangePasswordView from '../views/ChangePasswordView.vue'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -6,37 +13,37 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: () => import('../views/HomeView.vue'),
+      component: HomeView,
       meta: { requiresAuth: true }
     },
     {
       path: '/login',
       name: 'login',
-      component: () => import('../views/LoginView.vue'),
+      component: LoginView,
       meta: { guest: true }
     },
     {
       path: '/register',
       name: 'register',
-      component: () => import('../views/RegisterView.vue'),
+      component: RegisterView,
       meta: { guest: true }
     },
     {
       path: '/profile',
       name: 'profile',
-      component: () => import('../views/ProfileView.vue'),
+      component: ProfileView,
       meta: { requiresAuth: true }
     },
     {
       path: '/forgot-password',
       name: 'forgot-password',
-      component: () => import('../views/ForgotPasswordView.vue'),
+      component: ForgotPasswordView,
       meta: { guest: true }
     },
     {
       path: '/change-password',
       name: 'change-password',
-      component: () => import('../views/ChangePasswordView.vue'),
+      component: ChangePasswordView,
       meta: { requiresAuth: true }
     }
   ]

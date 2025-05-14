@@ -4,9 +4,9 @@
     <header class="absolute top-0 left-0 right-0 z-10 bg-[#0F172A]/95 backdrop-blur-md border-b border-gray-800">
       <div class="max-w-[375px] mx-auto">
         <div class="flex justify-between items-center px-4 py-3">
-          <h1 class="text-lg font-semibold">{{ currentSymbol ? `${getBaseSymbol(currentSymbol)}市场分析报告` : '加载中...' }}</h1>
+          <h1 class="text-lg font-semibold">{{ currentSymbol ? t('analysis.market_report', { symbol: getBaseSymbol(currentSymbol) }) : t('common.loading') }}</h1>
           <div class="flex items-center space-x-2">
-            <span class="text-xs text-gray-400">更新时间: {{ formatTime(analysisData?.last_update_time) }}</span>
+            <span class="text-xs text-gray-400">{{ t('analysis.last_update') }}: {{ formatTime(analysisData?.last_update_time) }}</span>
             <button
               class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-800 transition"
               @click="forceRefreshData"
@@ -94,19 +94,19 @@
         <div class="text-center px-4">
           <i class="ri-error-warning-line text-4xl text-red-500 mb-2"></i>
           <p class="text-gray-300 mb-2">{{ error }}</p>
-          <p class="text-gray-400 text-sm mb-4">请尝试重新加载或稍后再试</p>
+          <p class="text-gray-400 text-sm mb-4">{{ $t('errors.try_reload_or_later') }}</p>
           <div class="flex space-x-3 justify-center">
             <button
               class="px-4 py-2 bg-primary text-white rounded-lg"
               @click="refreshData"
             >
-              重试
+              {{ $t('common.retry') }}
             </button>
             <button
               class="px-4 py-2 bg-blue-600 text-white rounded-lg"
               @click="forceRefreshData"
             >
-              强制刷新
+              {{ $t('analysis.force_refresh') }}
             </button>
           </div>
         </div>
@@ -116,7 +116,7 @@
       <div v-else-if="analysisData" class="max-w-[375px] mx-auto px-4 pb-16">
         <!-- 价格展示卡片 -->
         <div class="mt-6 p-5 rounded-lg bg-gradient-to-b from-gray-800/60 to-gray-900/60 border border-gray-700/50 shadow-lg">
-          <h2 class="text-center text-gray-400 mb-1">分析报告生成时价格</h2>
+          <h2 class="text-center text-gray-400 mb-1">{{ $t('analysis.snapshot_price') }}</h2>
           <div class="text-center text-3xl font-bold mb-2">
             {{ formatPrice(analysisData.snapshot_price) }}
             <span class="text-sm text-gray-400">USD</span>
@@ -129,14 +129,14 @@
               @click="shareToTwitter"
             >
               <i class="ri-twitter-fill"></i>
-              <span class="text-sm">分享到推特</span>
+              <span class="text-sm">{{ $t('analysis.share_to_twitter') }}</span>
             </button>
             <button
               class="px-4 py-2 bg-gray-600/20 hover:bg-gray-600/30 text-gray-400 rounded-full transition flex items-center gap-1"
               @click="saveChartImage"
             >
               <i class="ri-image-line"></i>
-              <span class="text-sm">保存图片</span>
+              <span class="text-sm">{{ $t('analysis.save_image') }}</span>
             </button>
           </div>
 
@@ -148,7 +148,7 @@
             <div class="text-green-400 text-xl font-bold mb-1">{{ formatPercent(analysisData.trend_analysis.probabilities.up) }}</div>
             <div class="text-xs text-green-300 flex items-center justify-center">
               <i class="ri-arrow-up-line w-4 h-4 flex items-center justify-center"></i>
-              <span>上涨趋势</span>
+              <span>{{ $t('analysis.uptrend') }}</span>
             </div>
           </div>
 
@@ -156,7 +156,7 @@
             <div class="text-gray-300 text-xl font-bold mb-1">{{ formatPercent(analysisData.trend_analysis.probabilities.sideways) }}</div>
             <div class="text-xs text-gray-400 flex items-center justify-center">
               <i class="ri-subtract-line w-4 h-4 flex items-center justify-center"></i>
-              <span>横盘整理</span>
+              <span>{{ $t('analysis.sideways') }}</span>
             </div>
           </div>
 
@@ -164,14 +164,14 @@
             <div class="text-red-400 text-xl font-bold mb-1">{{ formatPercent(analysisData.trend_analysis.probabilities.down) }}</div>
             <div class="text-xs text-red-300 flex items-center justify-center">
               <i class="ri-arrow-down-line w-4 h-4 flex items-center justify-center"></i>
-              <span>下跌趋势</span>
+              <span>{{ $t('analysis.downtrend') }}</span>
             </div>
           </div>
         </div>
 
         <!-- 市场趋势分析 -->
         <div class="mt-6" v-if="analysisData?.trend_analysis?.summary">
-          <h3 class="text-lg font-medium mb-3">市场趋势分析</h3>
+          <h3 class="text-lg font-medium mb-3">{{ $t('analysis.market_trend_analysis') }}</h3>
           <div class="p-4 rounded-lg bg-gray-800/30 border border-gray-700/50">
             <p class="text-gray-300 leading-relaxed">
               {{ analysisData.trend_analysis.summary }}
@@ -181,7 +181,7 @@
 
         <!-- 技术指标分析 -->
         <div class="mt-6" v-if="analysisData?.indicators_analysis">
-          <h3 class="text-lg font-medium mb-3">技术指标</h3>
+          <h3 class="text-lg font-medium mb-3">{{ $t('analysis.technical_indicators') }}</h3>
           <div class="flex flex-col gap-3">
             <!-- 单参数指标 -->
             <div class="grid grid-cols-2 gap-3">
@@ -405,28 +405,28 @@
 
         <!-- 支撑阻力位 -->
         <div class="mt-6" v-if="analysisData?.trading_advice">
-          <h3 class="text-lg font-medium mb-3">交易建议</h3>
+          <h3 class="text-lg font-medium mb-3">{{ $t('analysis.trading_advice') }}</h3>
           <div class="p-4 rounded-lg bg-gray-800/30 border border-gray-700/50 space-y-3">
             <div class="flex items-center justify-between">
-              <div class="text-sm text-gray-400">建议操作</div>
+              <div class="text-sm text-gray-400">{{ $t('analysis.recommended_action') }}</div>
               <div class="text-sm" :class="analysisData.trading_advice.action === '买入' ? 'text-green-400' : analysisData.trading_advice.action === '卖出' ? 'text-red-400' : 'text-gray-400'">
                 {{ analysisData.trading_advice.action }}
               </div>
             </div>
             <div class="flex items-center justify-between">
-              <div class="text-sm text-gray-400">入场价格</div>
+              <div class="text-sm text-gray-400">{{ $t('analysis.entry_price') }}</div>
               <div class="text-sm">{{ formatPrice(analysisData.trading_advice.entry_price) }}</div>
             </div>
             <div class="flex items-center justify-between">
-              <div class="text-sm text-gray-400">止损价格</div>
+              <div class="text-sm text-gray-400">{{ $t('analysis.stop_loss') }}</div>
               <div class="text-sm text-red-400">{{ formatPrice(analysisData.trading_advice.stop_loss) }}</div>
             </div>
             <div class="flex items-center justify-between">
-              <div class="text-sm text-gray-400">目标价格</div>
+              <div class="text-sm text-gray-400">{{ $t('analysis.take_profit') }}</div>
               <div class="text-sm text-green-400">{{ formatPrice(analysisData.trading_advice.take_profit) }}</div>
             </div>
             <div class="pt-2 border-t border-gray-700/50">
-              <div class="text-sm text-gray-400 mb-1">原因分析</div>
+              <div class="text-sm text-gray-400 mb-1">{{ $t('analysis.reason') }}</div>
               <div class="text-sm text-gray-300">{{ analysisData.trading_advice.reason }}</div>
             </div>
           </div>
@@ -434,10 +434,10 @@
 
         <!-- 风险评估 -->
         <div class="mt-6" v-if="analysisData?.risk_assessment">
-          <h3 class="text-lg font-medium mb-3">风险评估</h3>
+          <h3 class="text-lg font-medium mb-3">{{ $t('analysis.risk_assessment') }}</h3>
           <div class="p-4 rounded-lg bg-gray-800/30 border border-gray-700/50">
             <div class="flex items-center justify-between mb-3">
-              <div class="text-sm text-gray-400">风险等级</div>
+              <div class="text-sm text-gray-400">{{ $t('analysis.risk_level') }}</div>
               <div class="px-2 py-0.5 rounded"
                 :class="{
                   'bg-red-900/30 text-red-400': analysisData.risk_assessment.level === '高',
@@ -448,7 +448,7 @@
               </div>
             </div>
             <div class="mb-3">
-              <div class="text-sm text-gray-400 mb-1">风险评分</div>
+              <div class="text-sm text-gray-400 mb-1">{{ $t('analysis.risk_score') }}</div>
               <div class="w-full bg-gray-700/50 rounded-full h-2">
                 <div class="h-2 rounded-full"
                   :class="{
@@ -460,7 +460,7 @@
               </div>
             </div>
             <div v-if="analysisData.risk_assessment.details && analysisData.risk_assessment.details.length > 0">
-              <div class="text-sm text-gray-400 mb-1">风险因素</div>
+              <div class="text-sm text-gray-400 mb-1">{{ $t('analysis.risk_factors') }}</div>
               <ul class="text-sm text-gray-300 list-disc pl-5 space-y-1">
                 <li v-for="(detail, index) in analysisData.risk_assessment.details" :key="index">
                   {{ detail }}
@@ -479,7 +479,7 @@
     <!-- 刷新进度弹窗 -->
     <div v-if="showRefreshModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center">
       <div class="bg-gray-900 rounded-xl p-6 w-[320px] shadow-xl border border-gray-800">
-        <h3 class="text-lg font-medium text-center mb-4">正在刷新数据</h3>
+        <h3 class="text-lg font-medium text-center mb-4">{{ $t('analysis.refreshing_data') }}</h3>
 
         <!-- 进度条 -->
         <div class="relative h-3 bg-gray-800 rounded-full overflow-hidden mb-2">
@@ -507,11 +507,11 @@
         <div class="grid grid-cols-2 h-16">
           <router-link to="/" class="flex flex-col items-center justify-center text-primary border-t-2 border-primary">
             <i class="ri-line-chart-line ri-lg w-6 h-6 flex items-center justify-center"></i>
-            <span class="text-xs mt-0.5">行情</span>
+            <span class="text-xs mt-0.5">{{ t('nav.market') }}</span>
           </router-link>
           <router-link to="/profile" class="flex flex-col items-center justify-center text-gray-500">
             <i class="ri-user-3-line ri-lg w-6 h-6 flex items-center justify-center"></i>
-            <span class="text-xs mt-0.5">我的</span>
+            <span class="text-xs mt-0.5">{{ t('nav.profile') }}</span>
           </router-link>
         </div>
       </div>
@@ -527,6 +527,9 @@ import html2canvas from 'html2canvas'
 declare module 'qrcode';
 import QRCode from 'qrcode'
 import { ElTooltip, ElMessage } from 'element-plus'
+import { useEnhancedI18n } from '@/utils/i18n-helper'
+
+const { t } = useEnhancedI18n()
 
 import { getTechnicalAnalysis } from '@/api'
 import { parseSymbolFromUrl } from '@/utils/trading'
@@ -555,7 +558,7 @@ const isTokenNotFound = ref(false) // 用于标记代币是否未找到（404错
 
 const showRefreshModal = ref(false)
 const refreshProgress = ref(0)
-const refreshText = ref('正在刷新数据...')
+const refreshText = ref(t('analysis.refreshing_data_ellipsis'))
 
 let refreshTimer: ReturnType<typeof setInterval> | null = null
 
@@ -717,7 +720,7 @@ const loadAnalysisData = async (forceRefresh: boolean = false) => {
 
           // 确保数据格式化，填充可能缺失的字段
           const formattedData = formatTechnicalAnalysisData(response)
-          
+
           // 调试日志
           console.log('原始API响应:', response);
           console.log('格式化后的数据:', formattedData);
@@ -922,7 +925,7 @@ const simulateRefreshProgress = () => {
   // 重置进度
   refreshProgress.value = 1 // 从1%开始，让用户立即看到进度
   showRefreshModal.value = true
-  refreshText.value = '正在获取市场数据并进行技术指标计算...'
+  refreshText.value = t('analysis.calculating_indicators')
 
   // 记录开始时间
   const startTime = Date.now()
@@ -974,13 +977,13 @@ const simulateRefreshProgress = () => {
 
     // 根据进度更新提示文本
     if (newProgress < 30) {
-      refreshText.value = '正在获取市场数据并进行技术指标计算...'
+      refreshText.value = t('analysis.calculating_indicators')
     } else if (newProgress < 60) {
-      refreshText.value = '正在进行趋势分析和概率评估...'
+      refreshText.value = t('analysis.analyzing_trends')
     } else if (newProgress < 85) {
-      refreshText.value = '正在生成交易建议和风险评估...'
+      refreshText.value = t('analysis.generating_advice')
     } else {
-      refreshText.value = '最终数据整合中，即将完成...'
+      refreshText.value = t('analysis.finalizing_data')
     }
 
     // 达到95%后停止，等待实际请求完成
