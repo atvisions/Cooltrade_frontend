@@ -76,6 +76,7 @@ export interface TechnicalAnalysisData {
   };
   current_price: number;
   snapshot_price: number;
+  price?: number;
   last_update_time: string;
 }
 

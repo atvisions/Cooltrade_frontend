@@ -120,11 +120,14 @@ export default {
     risk_factors: 'Risk Factors',
     refreshing_data: 'Refreshing Data',
     refreshing_data_ellipsis: 'Refreshing data...',
-    calculating_indicators: 'Calculating technical indicators...',
+    calculating_indicators: 'Fetching market data and calculating technical indicators...',
     analyzing_trends: 'Analyzing trends and probabilities...',
     generating_advice: 'Generating trading advice and risk assessment...',
     finalizing_data: 'Finalizing data integration...',
-    force_refresh: 'Force Refresh'
+    force_refresh: 'Force Refresh',
+    minute_ago: '{n} min ago',
+    hour_ago: '{n} hours ago',
+    day_ago: '{n} days ago'
   },
   indicators: {
     rsi: 'RSI',

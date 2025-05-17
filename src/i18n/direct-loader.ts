@@ -44,26 +44,31 @@ export function t(key: string, params?: Record<string, any>): string {
   // 分割键，例如 'auth.login' => ['auth', 'login']
   const keys = key.split('.')
   
-  // 获取当前语言的消息
-  let result = messages[currentLocale]
+  // 获取当前语言的消息对象
+  let value: any = messages[currentLocale as keyof typeof messages]
   
   // 遍历键路径
   for (const k of keys) {
-    if (!result) return key
-    result = result[k]
+    // 如果路径中的任何一部分不存在，则找不到翻译
+    if (value === undefined || value === null) return key
+    value = value[k]
   }
   
-  // 如果没有找到翻译，返回键名
-  if (!result) return key
+  // 如果找到的值是 undefined 或 null，则找不到翻译
+  if (value === undefined || value === null) return key
   
-  // 如果有参数，替换参数
-  if (params && typeof result === 'string') {
-    return Object.entries(params).reduce((str, [key, value]) => {
-      return str.replace(new RegExp(`{${key}}`, 'g'), String(value))
-    }, result)
+  // 如果找到的值是字符串，并且有参数，则替换参数
+  if (typeof value === 'string' && params) {
+    return Object.entries(params).reduce((str, [paramKey, paramValue]) => {
+      return str.replace(new RegExp(`{${paramKey}}`, 'g'), String(paramValue))
+    }, value) // 使用找到的字符串值作为累加器的初始值
   }
   
-  return result as string
+  // 如果找到的值不是字符串，或者没有参数，返回原始值（如果不是字符串，通常返回键名）
+  // 根据 vue-i18n 的行为，如果翻译值不是字符串，它通常直接返回该值。
+  // 但为了确保函数返回类型是 string，这里强制转换为 string。
+  // 更安全的方式是如果不是字符串就返回 key，但考虑到实际语言文件结构，强制转换应该可以。
+  return String(value)
 }
 
 // 设置语言

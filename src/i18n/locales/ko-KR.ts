@@ -120,11 +120,14 @@ export default {
     risk_factors: '위험 요소',
     refreshing_data: '데이터 새로고침 중',
     refreshing_data_ellipsis: '데이터 새로고침 중...',
-    calculating_indicators: '기술적 지표 계산 중...',
+    calculating_indicators: '시장 데이터 및 기술적 지표 계산 중...',
     analyzing_trends: '추세 및 확률 분석 중...',
     generating_advice: '거래 조언 및 위험 평가 생성 중...',
     finalizing_data: '데이터 통합 완료 중...',
-    force_refresh: '강제 새로고침'
+    force_refresh: '강제 새로고침',
+    minute_ago: '{n}분 전',
+    hour_ago: '{n}시간 전',
+    day_ago: '{n}일 전'
   },
   indicators: {
     rsi: 'RSI',
@@ -181,5 +184,11 @@ export default {
   nav: {
     market: '마켓',
     profile: '프로필'
+  },
+  tokenNotFound: {
+    title: '{symbol} 데이터를 찾을 수 없습니다',
+    description: '이 토큰은 아직 데이터베이스에 없습니다. 아래 버튼을 클릭하여 최신 데이터를 가져오세요',
+    loading: '최신 시장 데이터 가져오는 중...',
+    refreshButton: '최신 시장 데이터 가져오기'
   }
 }

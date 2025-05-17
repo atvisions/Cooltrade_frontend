@@ -1,0 +1,8 @@
+{
+  "tokenNotFound": {
+    "title": "{symbol} data not found",
+    "description": "This token is not in our database yet. Click the button below to get the latest data",
+    "loading": "Getting latest market data...",
+    "refreshButton": "Get Latest Market Data"
+  }
+} 

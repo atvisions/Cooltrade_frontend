@@ -58,6 +58,9 @@ export const setLanguage = (lang: string) => {
       // 调用API更新用户语言偏好
       updateUserLanguagePreference(lang)
     }
+
+    // 触发语言变更事件，通知其他组件重新加载数据
+    window.dispatchEvent(new CustomEvent('language-changed', { detail: { language: lang } }))
   }
 }
 

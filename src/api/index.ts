@@ -558,10 +558,24 @@ function isBaseApiResponse(response: unknown): response is BaseApiResponse {
   )
 }
 
-// 获取技术分析数据 - 添加更详细的错误处理和日志
+// 获取当前用户语言
+const getCurrentLanguage = (): string => {
+  // 从 localStorage 获取用户信息
+  const userInfo = localStorage.getItem('userInfo')
+  if (userInfo) {
+    try {
+      const user = JSON.parse(userInfo)
+      return user.language || 'zh-CN' // 如果用户设置了语言，使用用户设置的语言，否则默认使用中文
+    } catch (e) {
+      console.error('解析用户信息失败:', e)
+    }
+  }
+  return 'zh-CN' // 默认使用中文
+}
+
+// 获取技术分析数据
 export const getTechnicalAnalysis = async (
-  symbol: string,
-  forceRefresh: boolean = false
+  symbol: string
 ): Promise<FormattedTechnicalAnalysisData> => {
   try {
     // 确保symbol是大写的
@@ -572,14 +586,18 @@ export const getTechnicalAnalysis = async (
       ? normalizedSymbol
       : `${normalizedSymbol}USDT`;
 
-    // 构建请求路径
+    // 构建请求路径 - 获取已存在的报告
     const path = `/crypto/technical-indicators/${fullSymbol}/`
 
     // 准备查询参数
     const params: Record<string, any> = {}
-    if (forceRefresh) {
-      params.force_refresh = true
-    }
+
+    // 添加语言参数
+    const currentLanguage = getCurrentLanguage()
+    params.language = currentLanguage
+
+    // 记录当前使用的语言
+    console.log(`使用语言参数: ${currentLanguage} 获取 ${fullSymbol} 的分析报告`)
 
     // 使用基础 URL
     const url = `${getBaseUrl()}${path}`;
@@ -603,13 +621,80 @@ export const getTechnicalAnalysis = async (
         }
 
         if (data.status === 'success' && 'data' in data) {
-          return data.data
+          return formatTechnicalAnalysisData(data.data)
         }
       }
     }
 
     // 假设响应是直接的技术分析数据，则格式化并返回
-    return data
+    return formatTechnicalAnalysisData(data)
+  } catch (error: any) {
+    // 错误处理
+
+    // 网络错误重新格式化为更友好的消息
+    if (error.code === 'ERR_NETWORK') {
+      throw new Error('网络连接错误，请检查您的网络连接')
+    }
+
+    throw error
+  }
+}
+
+// 获取最新技术分析报告
+export const getLatestTechnicalAnalysis = async (
+  symbol: string
+): Promise<FormattedTechnicalAnalysisData> => {
+  try {
+    // 确保symbol是大写的
+    const normalizedSymbol = symbol.toUpperCase();
+
+    // 如果不包含USDT后缀，添加它
+    const fullSymbol = normalizedSymbol.endsWith('USDT')
+      ? normalizedSymbol
+      : `${normalizedSymbol}USDT`;
+
+    // 构建请求路径 - 获取最新报告
+    const path = `/crypto/get_report/${fullSymbol}/`
+
+    // 准备查询参数
+    const params: Record<string, any> = {}
+
+    // 添加语言参数
+    const currentLanguage = getCurrentLanguage()
+    params.language = currentLanguage
+
+    // 记录当前使用的语言
+    console.log(`使用语言参数: ${currentLanguage} 获取 ${fullSymbol} 的最新分析报告`)
+
+    // 使用基础 URL
+    const url = `${getBaseUrl()}${path}`;
+
+    // 发送请求
+    const response = await axios.get(url, {
+      params,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': localStorage.getItem('token') || ''
+      }
+    })
+    // 检查响应格式
+    const data = response.data
+
+    if (typeof data === 'object') {
+      // 检查是否是特殊响应格式
+      if ('status' in data) {
+        if (data.status === 'not_found') {
+          return data as unknown as FormattedTechnicalAnalysisData
+        }
+
+        if (data.status === 'success' && 'data' in data) {
+          return formatTechnicalAnalysisData(data.data)
+        }
+      }
+    }
+
+    // 假设响应是直接的技术分析数据，则格式化并返回
+    return formatTechnicalAnalysisData(data)
   } catch (error: any) {
     // 错误处理
 

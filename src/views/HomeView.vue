@@ -5,16 +5,8 @@
       <div class="max-w-[375px] mx-auto">
         <div class="flex justify-between items-center px-4 py-3">
           <h1 class="text-lg font-semibold">{{ currentSymbol ? t('analysis.market_report', { symbol: getBaseSymbol(currentSymbol) }) : t('common.loading') }}</h1>
-          <div class="flex items-center space-x-2">
+          <div class="flex items-center">
             <span class="text-xs text-gray-400">{{ t('analysis.last_update') }}: {{ formatTime(analysisData?.last_update_time) }}</span>
-            <button
-              class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-800 transition"
-              @click="forceRefreshData"
-              :disabled="showRefreshModal"
-              :class="{ 'opacity-50 cursor-not-allowed': showRefreshModal }"
-            >
-              <i class="ri-refresh-line ri-lg" :class="{ 'animate-spin': showRefreshModal }"></i>
-            </button>
           </div>
         </div>
       </div>
@@ -539,8 +531,7 @@ import type {
 import { formatTechnicalAnalysisData } from '@/utils/data-formatter'
 import TokenNotFoundView from '@/components/TokenNotFoundView.vue'
 
-// 是否为开发环境的标志（用于内部功能）
-const isDevelopment = false
+
 
 const isExtensionEnvironment = (): boolean => {
   return typeof chrome !== 'undefined' &&
@@ -629,21 +620,21 @@ const formatTime = (timeString?: string): string => {
   try {
     const date = new Date(timeString)
     if (isNaN(date.getTime())) {
-      return '无效时间'
+      return t('common.error')
     }
     const now = new Date()
     const diff = Math.floor((now.getTime() - date.getTime()) / 1000 / 60)
 
     if (diff < 60) {
-      return `${diff}分钟前`
+      return t('analysis.minute_ago', { n: diff })
     } else if (diff < 24 * 60) {
-      return `${Math.floor(diff / 60)}小时前`
+      return t('analysis.hour_ago', { n: Math.floor(diff / 60) })
     } else {
-      return `${Math.floor(diff / (24 * 60))}天前`
+      return t('analysis.day_ago', { n: Math.floor(diff / (24 * 60)) })
     }
   } catch (e) {
     console.error('时间格式化错误:', e)
-    return '时间错误'
+    return t('common.error')
   }
 }
 
@@ -706,7 +697,7 @@ const loadAnalysisData = async (forceRefresh: boolean = false) => {
       // 优先加载分析数据
       try {
         // 获取技术分析数据
-        const response = await getTechnicalAnalysis(symbol, forceRefresh)
+        const response = await getTechnicalAnalysis(symbol)
 
         // 处理特殊的"not_found"状态
         if (typeof response === 'object' && response !== null) {
@@ -718,8 +709,11 @@ const loadAnalysisData = async (forceRefresh: boolean = false) => {
             return
           }
 
-          // 确保数据格式化，填充可能缺失的字段
-          const formattedData = formatTechnicalAnalysisData(response)
+          // 获取当前语言
+          const currentLanguage = localStorage.getItem('language') || 'en-US'
+
+          // 确保数据格式化，填充可能缺失的字段，并应用翻译
+          const formattedData = formatTechnicalAnalysisData(response, currentLanguage)
 
           // 调试日志
           console.log('原始API响应:', response);
@@ -819,10 +813,30 @@ const loadAnalysisData = async (forceRefresh: boolean = false) => {
   }
 }
 
+// 监听语言变更事件，重新翻译报告数据
+const setupLanguageChangeListener = () => {
+  window.addEventListener('language-changed', async (event) => {
+    console.log('语言已变更，重新翻译报告数据')
+
+    // 获取新的语言
+    const newLanguage = (event as CustomEvent).detail?.language || localStorage.getItem('language') || 'en-US'
+
+    // 当语言变更时，重新加载数据以获取对应语言的报告
+    if (currentSymbol.value) {
+      console.log(`语言已变更为 ${newLanguage}，重新加载 ${currentSymbol.value} 的分析报告`)
+      // 重新加载数据，获取新语言的报告
+      await loadAnalysisData(false)
+    }
+  })
+}
+
 // 组件挂载时加载数据
 onMounted(async () => {
   // 确保DOM已完全渲染
   await nextTick()
+
+  // 设置语言变更监听器
+  setupLanguageChangeListener()
 
   // 延迟一点时间确保DOM已完全渲染
   setTimeout(async () => {
@@ -1024,16 +1038,19 @@ const forceRefreshData = async () => {
         analysisLoading.value = true
 
         // 优先加载分析数据 - 强制刷新
-        const refreshResponse = await getTechnicalAnalysis(currentSymbol.value, true)
+        const refreshResponse = await getTechnicalAnalysis(currentSymbol.value)
         // 强制刷新后再请求一次普通数据，确保获取最新数据
         await new Promise(resolve => setTimeout(resolve, 1000)) // 等待1秒
-        const latestResponse = await getTechnicalAnalysis(currentSymbol.value, false)
+        const latestResponse = await getTechnicalAnalysis(currentSymbol.value)
 
         // 使用最新的数据（如果有）
         const dataToFormat = latestResponse || refreshResponse
 
-        // 确保数据格式化，填充可能缺失的字段
-        const formattedData = formatTechnicalAnalysisData(dataToFormat)
+        // 获取当前语言
+        const currentLanguage = localStorage.getItem('language') || 'en-US'
+
+        // 确保数据格式化，填充可能缺失的字段，并应用翻译
+        const formattedData = formatTechnicalAnalysisData(dataToFormat, currentLanguage)
 
         // 更新分析数据
         analysisData.value = formattedData
@@ -1171,7 +1188,7 @@ const refreshData = async () => {
 
   try {
     // 尝试使用普通请求获取数据
-    const response = await getTechnicalAnalysis(currentSymbol.value, false)
+    const response = await getTechnicalAnalysis(currentSymbol.value)
     console.log('普通刷新数据返回:', response)
 
     // 检查响应状态，处理新的响应格式
@@ -1184,8 +1201,11 @@ const refreshData = async () => {
       }
     }
 
-    // 确保数据格式化，填充可能缺失的字段
-    const formattedData = formatTechnicalAnalysisData(response)
+    // 获取当前语言
+    const currentLanguage = localStorage.getItem('language') || 'en-US'
+
+    // 确保数据格式化，填充可能缺失的字段，并应用翻译
+    const formattedData = formatTechnicalAnalysisData(response, currentLanguage)
 
     // 更新数据
     analysisData.value = formattedData

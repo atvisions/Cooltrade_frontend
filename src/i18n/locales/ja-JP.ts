@@ -120,11 +120,14 @@ export default {
     risk_factors: 'リスク要因',
     refreshing_data: 'データ更新中',
     refreshing_data_ellipsis: 'データ更新中...',
-    calculating_indicators: 'テクニカル指標を計算中...',
+    calculating_indicators: '市場データ取得とテクニカル指標計算中...',
     analyzing_trends: 'トレンドと確率を分析中...',
     generating_advice: '取引アドバイスとリスク評価を生成中...',
     finalizing_data: 'データ統合を完了中...',
-    force_refresh: '強制更新'
+    force_refresh: '強制更新',
+    minute_ago: '{n}分前',
+    hour_ago: '{n}時間前',
+    day_ago: '{n}日前'
   },
   indicators: {
     rsi: 'RSI',
@@ -181,5 +184,11 @@ export default {
   nav: {
     market: 'マーケット',
     profile: 'プロフィール'
+  },
+  tokenNotFound: {
+    title: '{symbol} データが見つかりません',
+    description: 'このトークンはまだデータベースにありません。下のボタンをクリックして最新データを取得してください',
+    loading: '最新の市場データを取得中...',
+    refreshButton: '最新の市場データを取得'
   }
 }

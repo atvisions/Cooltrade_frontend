@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import I18nDebug from '@/components/I18nDebug.vue'
 
 const { locale } = useI18n()
 const isDevelopment = ref(process.env.NODE_ENV !== 'production')
@@ -24,7 +23,6 @@ onMounted(() => {
 
 <template>
   <router-view />
-  <I18nDebug v-if="isDevelopment" />
 </template>
 
 <style>

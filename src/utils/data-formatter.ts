@@ -43,11 +43,15 @@ function isTechnicalAnalysisData(data: unknown): data is TechnicalAnalysisData {
 /**
  * 格式化技术分析数据
  * @param response 可能是常规分析响应或强制刷新响应，或直接返回的数据
+ * @param targetLanguage 目标语言，默认为当前语言
  * @returns 格式化后的数据
  */
 export function formatTechnicalAnalysisData(
-  response: TechnicalAnalysisData | TechnicalAnalysisResponse | ForceRefreshResponse | ForceRefreshData | unknown
+  response: TechnicalAnalysisData | TechnicalAnalysisResponse | ForceRefreshResponse | ForceRefreshData | unknown,
+  targetLanguage?: string
 ): FormattedTechnicalAnalysisData {
+  // 获取当前语言，如果没有指定则使用localStorage中的语言或默认英文
+  const currentLanguage = targetLanguage || localStorage.getItem('language') || 'en-US';
   try {
     // 如果响应为空，抛出明确的错误
     if (!response) {
@@ -72,8 +76,8 @@ export function formatTechnicalAnalysisData(
       try {
         // 创建格式化后的数据对象，添加默认值和类型检查
         const formattedData: FormattedTechnicalAnalysisData = {
-          current_price: typeof response.current_price === 'number' ? response.current_price : 0,
-          snapshot_price: typeof response.snapshot_price === 'number' ? response.snapshot_price : (typeof response.current_price === 'number' ? response.current_price : 0),
+          current_price: typeof response.current_price === 'number' ? response.current_price : (typeof response.price === 'number' ? response.price : 0),
+          snapshot_price: typeof response.snapshot_price === 'number' ? response.snapshot_price : (typeof response.price === 'number' ? response.price : 0),
           trend_analysis: {
             probabilities: {
               up: typeof response.trend_up_probability === 'number' ? response.trend_up_probability : 0,
@@ -98,6 +102,7 @@ export function formatTechnicalAnalysisData(
           last_update_time: typeof response.last_update_time === 'string' ? response.last_update_time : new Date().toISOString()
         }
 
+        // 直接返回格式化后的数据
         return formattedData
       } catch (error) {
         throw new Error(`格式化强制刷新数据失败: ${error instanceof Error ? error.message : String(error)}`)
@@ -109,8 +114,8 @@ export function formatTechnicalAnalysisData(
       try {
         // 创建格式化后的数据对象，添加默认值和类型检查
         const formattedData: FormattedTechnicalAnalysisData = {
-          current_price: typeof response.current_price === 'number' ? response.current_price : 0,
-          snapshot_price: typeof response.snapshot_price === 'number' ? response.snapshot_price : (typeof response.current_price === 'number' ? response.current_price : 0),
+          current_price: typeof response.current_price === 'number' ? response.current_price : (typeof response.price === 'number' ? response.price : 0),
+          snapshot_price: typeof response.snapshot_price === 'number' ? response.snapshot_price : (typeof response.price === 'number' ? response.price : 0),
           trend_analysis: {
             probabilities: {
               up: typeof response.trend_analysis?.probabilities?.up === 'number' ? response.trend_analysis.probabilities.up : 0,
@@ -135,6 +140,7 @@ export function formatTechnicalAnalysisData(
           last_update_time: typeof response.last_update_time === 'string' ? response.last_update_time : new Date().toISOString()
         }
 
+        // 直接返回格式化后的数据
         return formattedData
       } catch (error) {
         throw new Error(`格式化技术分析数据失败: ${error instanceof Error ? error.message : String(error)}`)
@@ -144,41 +150,43 @@ export function formatTechnicalAnalysisData(
     // 如果无法识别数据格式
     throw new Error('无法识别的数据格式')
   } catch (error) {
-    // 返回一个默认的数据结构，避免UI崩溃
-    return {
+    // 创建默认的数据结构
+    const defaultData = {
       current_price: 0,
       snapshot_price: 0,
       trend_analysis: {
         probabilities: { up: 0.33, sideways: 0.34, down: 0.33 },
-        summary: '数据加载失败，请刷新重试'
+        summary: 'Data loading failed, please refresh and try again'
       },
       indicators_analysis: {
-        RSI: { value: 0, analysis: '数据加载失败', support_trend: '中性' },
-        MACD: { value: { line: 0, signal: 0, histogram: 0 }, analysis: '数据加载失败', support_trend: '中性' },
-        BollingerBands: { value: { upper: 0, middle: 0, lower: 0 }, analysis: '数据加载失败', support_trend: '中性' },
-        BIAS: { value: 0, analysis: '数据加载失败', support_trend: '中性' },
-        PSY: { value: 0, analysis: '数据加载失败', support_trend: '中性' },
-        DMI: { value: { plus_di: 0, minus_di: 0, adx: 0 }, analysis: '数据加载失败', support_trend: '中性' },
-        VWAP: { value: 0, analysis: '数据加载失败', support_trend: '中性' },
-        FundingRate: { value: 0, analysis: '数据加载失败', support_trend: '中性' },
-        ExchangeNetflow: { value: 0, analysis: '数据加载失败', support_trend: '中性' },
-        NUPL: { value: 0, analysis: '数据加载失败', support_trend: '中性' },
-        MayerMultiple: { value: 0, analysis: '数据加载失败', support_trend: '中性' }
+        RSI: { value: 0, analysis: 'Data loading failed', support_trend: 'neutral' },
+        MACD: { value: { line: 0, signal: 0, histogram: 0 }, analysis: 'Data loading failed', support_trend: 'neutral' },
+        BollingerBands: { value: { upper: 0, middle: 0, lower: 0 }, analysis: 'Data loading failed', support_trend: 'neutral' },
+        BIAS: { value: 0, analysis: 'Data loading failed', support_trend: 'neutral' },
+        PSY: { value: 0, analysis: 'Data loading failed', support_trend: 'neutral' },
+        DMI: { value: { plus_di: 0, minus_di: 0, adx: 0 }, analysis: 'Data loading failed', support_trend: 'neutral' },
+        VWAP: { value: 0, analysis: 'Data loading failed', support_trend: 'neutral' },
+        FundingRate: { value: 0, analysis: 'Data loading failed', support_trend: 'neutral' },
+        ExchangeNetflow: { value: 0, analysis: 'Data loading failed', support_trend: 'neutral' },
+        NUPL: { value: 0, analysis: 'Data loading failed', support_trend: 'neutral' },
+        MayerMultiple: { value: 0, analysis: 'Data loading failed', support_trend: 'neutral' }
       },
       trading_advice: {
-        action: '无建议',
-        reason: '数据加载失败',
+        action: 'No advice',
+        reason: 'Data loading failed',
         entry_price: 0,
         stop_loss: 0,
         take_profit: 0
       },
       risk_assessment: {
-        level: '中',
+        level: 'medium',
         score: 50,
-        details: ['数据加载失败，无法评估风险']
+        details: ['Data loading failed, unable to assess risk']
       },
       last_update_time: new Date().toISOString()
-    }
+    };
+
+    // 直接返回默认数据
+    return defaultData
   }
 }
-

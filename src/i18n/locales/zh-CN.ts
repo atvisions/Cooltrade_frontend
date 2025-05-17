@@ -124,7 +124,10 @@ export default {
     analyzing_trends: '正在进行趋势分析和概率评估...',
     generating_advice: '正在生成交易建议和风险评估...',
     finalizing_data: '最终数据整合中，即将完成...',
-    force_refresh: '强制刷新'
+    force_refresh: '强制刷新',
+    minute_ago: '{n}分钟前',
+    hour_ago: '{n}小时前',
+    day_ago: '{n}天前'
   },
   indicators: {
     rsi: 'RSI',
@@ -181,5 +184,11 @@ export default {
   nav: {
     market: '行情',
     profile: '我的'
+  },
+  tokenNotFound: {
+    title: '{symbol} 数据未找到',
+    description: '该代币尚未在我们的数据库中，点击下方按钮获取最新数据',
+    loading: '正在获取最新市场数据...',
+    refreshButton: '获取最新市场数据'
   }
 }
