@@ -184,5 +184,18 @@ export default {
   nav: {
     market: 'Market',
     profile: 'Profile'
+  },
+  indicatorExplanations: {
+    RSI: 'Relative Strength Index (RSI), measures price momentum and overbought/oversold conditions.',
+    BIAS: 'Bias, measures the deviation of price from the moving average.',
+    PSY: "Psychological Line, reflects market participants' psychological changes.",
+    VWAP: 'Volume Weighted Average Price, reflects the true trading value of the market.',
+    FundingRate: 'Funding Rate, reflects the balance of long and short forces in the contract market.',
+    ExchangeNetflow: 'Exchange Netflow, reflects the direction of capital flow.',
+    NUPL: 'Net Unrealized Profit/Loss, reflects the overall profit and loss status of the market.',
+    MayerMultiple: 'Mayer Multiple, the ratio of the current price to the 200-day moving average.',
+    MACD: 'Moving Average Convergence Divergence, used to judge trend strength and turning points.',
+    BollingerBands: 'Bollinger Bands, measures price volatility and support/resistance levels.',
+    DMI: 'Directional Movement Index, used to judge trend direction and strength.'
   }
 }

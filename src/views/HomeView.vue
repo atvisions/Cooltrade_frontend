@@ -181,7 +181,7 @@
               <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
                 <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
                   RSI (14)
-                  <el-tooltip :content="indicatorExplanations.RSI" placement="top">
+                  <el-tooltip :content="getIndicatorExplanation('RSI')" placement="top">
                     <i class="ri-question-line cursor-help"></i>
                   </el-tooltip>
                 </div>
@@ -197,7 +197,7 @@
               <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
                 <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
                   BIAS
-                  <el-tooltip :content="indicatorExplanations.BIAS" placement="top">
+                  <el-tooltip :content="getIndicatorExplanation('BIAS')" placement="top">
                     <i class="ri-question-line cursor-help"></i>
                   </el-tooltip>
                 </div>
@@ -213,7 +213,7 @@
               <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
                 <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
                   PSY
-                  <el-tooltip :content="indicatorExplanations.PSY" placement="top">
+                  <el-tooltip :content="getIndicatorExplanation('PSY')" placement="top">
                     <i class="ri-question-line cursor-help"></i>
                   </el-tooltip>
                 </div>
@@ -229,7 +229,7 @@
               <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
                 <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
                   VWAP
-                  <el-tooltip :content="indicatorExplanations.VWAP" placement="top">
+                  <el-tooltip :content="getIndicatorExplanation('VWAP')" placement="top">
                     <i class="ri-question-line cursor-help"></i>
                   </el-tooltip>
                 </div>
@@ -245,7 +245,7 @@
               <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
                 <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
                   Funding Rate
-                  <el-tooltip :content="indicatorExplanations.FundingRate" placement="top">
+                  <el-tooltip :content="getIndicatorExplanation('FundingRate')" placement="top">
                     <i class="ri-question-line cursor-help"></i>
                   </el-tooltip>
                 </div>
@@ -261,7 +261,7 @@
               <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
                 <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
                   Exchange Netflow
-                  <el-tooltip :content="indicatorExplanations.ExchangeNetflow" placement="top">
+                  <el-tooltip :content="getIndicatorExplanation('ExchangeNetflow')" placement="top">
                     <i class="ri-question-line cursor-help"></i>
                   </el-tooltip>
                 </div>
@@ -277,7 +277,7 @@
               <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
                 <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
                   NUPL
-                  <el-tooltip :content="indicatorExplanations.NUPL" placement="top">
+                  <el-tooltip :content="getIndicatorExplanation('NUPL')" placement="top">
                     <i class="ri-question-line cursor-help"></i>
                   </el-tooltip>
                 </div>
@@ -293,7 +293,7 @@
               <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
                 <div class="text-sm text-gray-400 mb-1 flex items-center gap-1">
                   Mayer Multiple
-                  <el-tooltip :content="indicatorExplanations.MayerMultiple" placement="top">
+                  <el-tooltip :content="getIndicatorExplanation('MayerMultiple')" placement="top">
                     <i class="ri-question-line cursor-help"></i>
                   </el-tooltip>
                 </div>
@@ -311,7 +311,7 @@
               <div class="flex items-center justify-between mb-2">
                 <div class="text-sm text-gray-400 flex items-center gap-1">
                   MACD
-                  <el-tooltip :content="indicatorExplanations.MACD" placement="top">
+                  <el-tooltip :content="getIndicatorExplanation('MACD')" placement="top">
                     <i class="ri-question-line cursor-help"></i>
                   </el-tooltip>
                 </div>
@@ -340,7 +340,7 @@
               <div class="flex items-center justify-between mb-2">
                 <div class="text-sm text-gray-400 flex items-center gap-1">
                   Bollinger Bands
-                  <el-tooltip :content="indicatorExplanations.BollingerBands" placement="top">
+                  <el-tooltip :content="getIndicatorExplanation('BollingerBands')" placement="top">
                     <i class="ri-question-line cursor-help"></i>
                   </el-tooltip>
                 </div>
@@ -369,7 +369,7 @@
               <div class="flex items-center justify-between mb-2">
                 <div class="text-sm text-gray-400 flex items-center gap-1">
                   DMI
-                  <el-tooltip :content="indicatorExplanations.DMI" placement="top">
+                  <el-tooltip :content="getIndicatorExplanation('DMI')" placement="top">
                     <i class="ri-question-line cursor-help"></i>
                   </el-tooltip>
                 </div>
@@ -495,8 +495,10 @@ declare module 'qrcode';
 import QRCode from 'qrcode'
 import { ElTooltip, ElMessage } from 'element-plus'
 import { useEnhancedI18n } from '@/utils/i18n-helper'
+import { useI18n } from 'vue-i18n'
 
 const { t } = useEnhancedI18n()
+const { t: i18nT } = useI18n()
 
 import { getTechnicalAnalysis } from '@/api'
 import { parseSymbolFromUrl } from '@/utils/trading'
@@ -521,27 +523,7 @@ const error = ref<string | null>(null)
 const currentSymbol = ref<string>('')
 const retryCount = ref(0)
 const isTokenNotFound = ref(false) // 用于标记代币是否未找到（404错误）
-
 const showRefreshModal = ref(false)
-const refreshProgress = ref(0)
-const refreshText = ref(t('analysis.refreshing_data_ellipsis'))
-
-let refreshTimer: ReturnType<typeof setInterval> | null = null
-
-// 指标英文名与说明映射
-const indicatorExplanations: Record<string, string> = {
-  RSI: '相对强弱指数（RSI），用于衡量价格动量和超买超卖状态。',
-  BIAS: '乖离率，衡量价格偏离均线的程度。',
-  PSY: '心理线指标，反映市场参与者的心理变化。',
-  VWAP: '成交量加权平均价，反映市场真实交易价值。',
-  FundingRate: '资金费率，反映合约市场多空力量对比。',
-  ExchangeNetflow: '交易所净流入，反映资金流向。',
-  NUPL: '未实现净盈亏比率，反映市场整体盈亏状况。',
-  MayerMultiple: '梅耶倍数，当前价格与200日均线的比值。',
-  MACD: '移动平均线收敛散度，用于判断趋势强弱和转折点。',
-  BollingerBands: '布林带，用于衡量价格波动性和支撑阻力位。',
-  DMI: '动向指标，用于判断趋势方向和强度。'
-}
 
 // 格式化价格显示
 const formatPrice = (price?: number | string | null) => {
@@ -1005,6 +987,8 @@ const refreshData = async () => {
 // 分享到推特
 const shareToTwitter = () => {
   try {
+    // 获取当前语言
+    const lang = (localStorage.getItem('language') || 'en-US').toLowerCase()
     // 构建分享文本
     const symbol = currentSymbol.value || 'CRYPTO'
     const price = formatPrice(analysisData.value?.current_price || 0)
@@ -1013,70 +997,37 @@ const shareToTwitter = () => {
     let upProb = analysisData.value?.trend_analysis?.probabilities?.up
     let downProb = analysisData.value?.trend_analysis?.probabilities?.down
 
-    // 检查概率值是否有效，如果无效则使用默认值
     upProb = typeof upProb === 'number' && upProb >= 0 && upProb <= 1 ? upProb : 0.33
     downProb = typeof downProb === 'number' && downProb >= 0 && downProb <= 1 ? downProb : 0.33
 
-
-
     // 获取趋势分析摘要
-    const trendSummary = analysisData.value?.trend_analysis?.summary || '无趋势分析'
-
+    const trendSummary = analysisData.value?.trend_analysis?.summary || ''
     // 获取交易建议
-    const tradingAction = analysisData.value?.trading_advice?.action || '无交易建议'
+    const tradingAction = analysisData.value?.trading_advice?.action || ''
     const tradingReason = analysisData.value?.trading_advice?.reason || ''
     const entryPrice = formatPrice(analysisData.value?.trading_advice?.entry_price)
     const stopLoss = formatPrice(analysisData.value?.trading_advice?.stop_loss)
     const takeProfit = formatPrice(analysisData.value?.trading_advice?.take_profit)
-
     // 获取风险评估
-    const riskLevel = analysisData.value?.risk_assessment?.level || '中'
+    const riskLevel = analysisData.value?.risk_assessment?.level || ''
     const riskScore = analysisData.value?.risk_assessment?.score || 50
     const riskDetails = analysisData.value?.risk_assessment?.details || []
 
-    // 构建分享文本
-    let shareText = `${symbol}市场分析报告 - 当前价格: ${price} USD
-
-本报告来源 - K线军师
-
-市场趋势分析:
-${trendSummary.substring(0, 100)}${trendSummary.length > 100 ? '...' : ''}
-
-交易建议:
-操作: ${tradingAction}
-入场价: ${entryPrice}
-止损价: ${stopLoss}
-目标价: ${takeProfit}
-原因: ${tradingReason.substring(0, 80)}${tradingReason.length > 80 ? '...' : ''}
-
-风险评估:
-风险等级: ${riskLevel}
-风险评分: ${riskScore}/100
-${riskDetails.length > 0 ? '主要风险因素:\n' + riskDetails.slice(0, 2).map(detail => `- ${detail}`).join('\n') : ''}
-
-#加密货币 #技术分析 #交易建议`
+    // 多语言分享文本
+    let shareText = ''
+    if (lang === 'zh-cn') {
+      shareText = `${symbol}市场分析报告 - 当前价格: ${price} USD\n\n市场趋势:\n${trendSummary.substring(0, 50)}${trendSummary.length > 50 ? '...' : ''}\n\n交易建议:\n操作: ${tradingAction}\n入场价: ${entryPrice}\n止损价: ${stopLoss}\n目标价: ${takeProfit}\n\n风险评估:\n风险等级: ${riskLevel}\n风险评分: ${riskScore}/100\n${riskDetails.length > 0 ? '主要风险因素:\n' + riskDetails.slice(0, 2).map(detail => `- ${detail}`).join('\n') : ''}\n\n#加密货币 #技术分析 #交易建议`
+    } else if (lang === 'ja-jp') {
+      shareText = `${symbol}市場分析レポート - 現在価格: ${price} USD\n\n市場トレンド:\n${trendSummary.substring(0, 50)}${trendSummary.length > 50 ? '...' : ''}\n\n取引アドバイス:\nアクション: ${tradingAction}\nエントリー価格: ${entryPrice}\nストップロス: ${stopLoss}\n利益確定: ${takeProfit}\n\nリスク評価:\nリスクレベル: ${riskLevel}\nリスクスコア: ${riskScore}/100\n${riskDetails.length > 0 ? '主なリスク要因:\n' + riskDetails.slice(0, 2).map(detail => `- ${detail}`).join('\n') : ''}\n\n#暗号資産 #テクニカル分析 #取引アドバイス`
+    } else if (lang === 'ko-kr') {
+      shareText = `${symbol} 시장 분석 리포트 - 현재 가격: ${price} USD\n\n시장 트렌드:\n${trendSummary.substring(0, 50)}${trendSummary.length > 50 ? '...' : ''}\n\n거래 조언:\n행동: ${tradingAction}\n진입 가격: ${entryPrice}\n손절가: ${stopLoss}\n이익실현가: ${takeProfit}\n\n위험 평가:\n위험 수준: ${riskLevel}\n위험 점수: ${riskScore}/100\n${riskDetails.length > 0 ? '주요 위험 요소:\n' + riskDetails.slice(0, 2).map(detail => `- ${detail}`).join('\n') : ''}\n\n#암호화폐 #기술분석 #거래조언`
+    } else {
+      shareText = `${symbol} Market Analysis Report - Current Price: ${price} USD\n\nMarket Trend:\n${trendSummary.substring(0, 50)}${trendSummary.length > 50 ? '...' : ''}\n\nTrading Advice:\nAction: ${tradingAction}\nEntry Price: ${entryPrice}\nStop Loss: ${stopLoss}\nTake Profit: ${takeProfit}\n\nRisk Assessment:\nRisk Level: ${riskLevel}\nRisk Score: ${riskScore}/100\n${riskDetails.length > 0 ? 'Main Risk Factors:\n' + riskDetails.slice(0, 2).map(detail => `- ${detail}`).join('\n') : ''}\n\n#crypto #technicalanalysis #tradingadvice`
+    }
 
     // 检查字符长度，如果超过270个字符，则进行裁剪
     if (shareText.length > 270) {
-      console.log('分享文本过长，进行裁剪。原长度:', shareText.length)
-
-      // 简化版本，保留核心信息
-      shareText = `${symbol}市场分析报告 - 当前价格: ${price} USD
-
-市场趋势:
-${trendSummary.substring(0, 50)}${trendSummary.length > 50 ? '...' : ''}
-
-交易建议:
-操作: ${tradingAction}
-入场价: ${entryPrice}
-止损价: ${stopLoss}
-目标价: ${takeProfit}
-
-风险评估:
-风险等级: ${riskLevel}
-风险评分: ${riskScore}/100
-
-#加密货币 #技术分析 #交易建议`
+      shareText = shareText.substring(0, 260) + '...'
     }
 
     // 构建Twitter分享URL
@@ -1231,10 +1182,27 @@ const saveChartImage = async () => {
     qrDiv.style.flexDirection = 'column'
     qrDiv.style.alignItems = 'center'
 
+    // 获取当前语言
+    const lang = (localStorage.getItem('language') || 'en-US').toLowerCase()
+    let appDesc = ''
+    switch (lang) {
+      case 'zh-cn':
+        appDesc = '智能加密行情分析与交易决策平台，助你高效洞察市场趋势，科学制定交易策略。'
+        break
+      case 'ja-jp':
+        appDesc = 'スマートな暗号資産分析と取引意思決定プラットフォーム。市場トレンドを効率的に洞察し、科学的な取引戦略をサポートします。'
+        break
+      case 'ko-kr':
+        appDesc = '스마트 암호화폐 분석 및 트레이딩 의사결정 플랫폼, 시장 트렌드를 효율적으로 파악하고 과학적인 전략 수립을 지원합니다.'
+        break
+      default:
+        appDesc = 'Smart crypto market analysis and trading decision platform. Efficiently gain market insights and make scientific trading strategies.'
+    }
+
     qrDiv.innerHTML = `
-      <div style="margin-bottom: 8px; font-size: 15px; color: #38bdf8; font-weight: 600;">K线军师</div>
+      <div style="margin-bottom: 8px; font-size: 15px; color: #38bdf8; font-weight: 600;">Cooltrade</div>
       <div style="margin-bottom: 10px; font-size: 13px; color: #9ca3af; max-width: 320px;">
-        智能加密行情分析与交易决策平台，助你高效洞察市场趋势，科学制定交易策略。
+        ${appDesc}
       </div>
     `
     const qrCanvas = document.createElement('canvas')
@@ -1244,7 +1212,7 @@ const saveChartImage = async () => {
     urlDiv.style.fontSize = '14px'
     urlDiv.style.color = '#60a5fa'
     urlDiv.style.fontWeight = 'bold'
-    urlDiv.innerText = 'https://www.kxianjunshi.com'
+    urlDiv.innerText = 'www.cooltrade.xyz'
     qrDiv.appendChild(urlDiv)
     container.appendChild(qrDiv)
 
@@ -1252,7 +1220,7 @@ const saveChartImage = async () => {
     document.body.appendChild(container)
 
     // 2. 生成二维码
-    await QRCode.toCanvas(qrCanvas, 'https://www.kxianjunshi.com', { width: 100, margin: 1 })
+    await QRCode.toCanvas(qrCanvas, 'https://www.cooltrade.xyz', { width: 100, margin: 1 })
 
     // 3. 生成图片
     const canvas = await html2canvas(container, {
@@ -1331,6 +1299,8 @@ const getLocalizedRiskLevel = (level: RiskLevelType, lang: LangType): string => 
 }
 
 const currentLanguage: LangType = (localStorage.getItem('language') as LangType) || 'zh-CN';
+
+const getIndicatorExplanation = (key: string) => i18nT(`indicatorExplanations.${key}`)
 
 </script>
 
