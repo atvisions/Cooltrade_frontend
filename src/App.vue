@@ -7,8 +7,12 @@ const isDevelopment = ref(process.env.NODE_ENV !== 'production')
 
 onMounted(() => {
   // 确保在应用挂载时正确设置语言
-  const storedLang = localStorage.getItem('language')
-  if (storedLang && ['zh-CN', 'en-US', 'ja-JP', 'ko-KR'].includes(storedLang)) {
+  let storedLang = localStorage.getItem('language')
+  if (!storedLang) {
+    localStorage.setItem('language', 'en-US')
+    storedLang = 'en-US'
+  }
+  if (['zh-CN', 'en-US', 'ja-JP', 'ko-KR'].includes(storedLang)) {
     locale.value = storedLang
   } else {
     // 如果没有存储的语言，使用浏览器语言

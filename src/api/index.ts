@@ -640,10 +640,17 @@ export const getTechnicalAnalysis = async (
   }
 }
 
+// 防止重复请求的标记
+let pendingRequests: Record<string, boolean> = {};
+
 // 获取最新技术分析报告
 export const getLatestTechnicalAnalysis = async (
   symbol: string
 ): Promise<FormattedTechnicalAnalysisData> => {
+  // 定义在函数顶部，以便在 try/catch 块中都可以访问
+  let requestPath = '';
+  let requestLanguage = '';
+
   try {
     // 确保symbol是大写的
     const normalizedSymbol = symbol.toUpperCase();
@@ -654,27 +661,44 @@ export const getLatestTechnicalAnalysis = async (
       : `${normalizedSymbol}USDT`;
 
     // 构建请求路径 - 获取最新报告
-    const path = `/crypto/get_report/${fullSymbol}/`
+    requestPath = `/crypto/get_report/${fullSymbol}/`
 
     // 准备查询参数
     const params: Record<string, any> = {}
 
     // 添加语言参数
-    const currentLanguage = getCurrentLanguage()
-    params.language = currentLanguage
+    requestLanguage = getCurrentLanguage()
+    params.language = requestLanguage
+
+    // 添加时间戳参数，防止缓存
+    params._t = Date.now()
+
+    // 创建请求标识符
+    const requestId = `${requestPath}?language=${requestLanguage}`;
+
+    // 检查是否有相同的请求正在进行中
+    if (pendingRequests[requestId]) {
+      console.log(`请求 ${requestId} 已在进行中，跳过重复请求`);
+      throw new Error('请求已在进行中，请稍后再试');
+    }
+
+    // 标记请求为进行中
+    pendingRequests[requestId] = true;
 
     // 记录当前使用的语言
-    console.log(`使用语言参数: ${currentLanguage} 获取 ${fullSymbol} 的最新分析报告`)
+    console.log(`使用语言参数: ${requestLanguage} 获取 ${fullSymbol} 的最新分析报告`)
 
     // 使用基础 URL
-    const url = `${getBaseUrl()}${path}`;
+    const url = `${getBaseUrl()}${requestPath}`;
 
     // 发送请求
     const response = await axios.get(url, {
       params,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': localStorage.getItem('token') || ''
+        'Authorization': localStorage.getItem('token') || '',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
       }
     })
     // 检查响应格式
@@ -694,9 +718,19 @@ export const getLatestTechnicalAnalysis = async (
     }
 
     // 假设响应是直接的技术分析数据，则格式化并返回
-    return formatTechnicalAnalysisData(data)
+    const result = formatTechnicalAnalysisData(data);
+
+    // 清除请求标记
+    pendingRequests[`${requestPath}?language=${requestLanguage}`] = false;
+
+    return result;
   } catch (error: any) {
     // 错误处理
+
+    // 清除请求标记
+    if (requestPath && requestLanguage) {
+      pendingRequests[`${requestPath}?language=${requestLanguage}`] = false;
+    }
 
     // 网络错误重新格式化为更友好的消息
     if (error.code === 'ERR_NETWORK') {

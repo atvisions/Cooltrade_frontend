@@ -402,7 +402,7 @@
             <div class="flex items-center justify-between">
               <div class="text-sm text-gray-400">{{ $t('analysis.recommended_action') }}</div>
               <div class="text-sm" :class="analysisData.trading_advice.action === '买入' ? 'text-green-400' : analysisData.trading_advice.action === '卖出' ? 'text-red-400' : 'text-gray-400'">
-                {{ analysisData.trading_advice.action }}
+                {{ getLocalizedAction(analysisData.trading_advice.action, currentLanguage) }}
               </div>
             </div>
             <div class="flex items-center justify-between">
@@ -436,7 +436,7 @@
                   'bg-yellow-900/30 text-yellow-400': analysisData.risk_assessment.level === '中',
                   'bg-green-900/30 text-green-400': analysisData.risk_assessment.level === '低'
                 }">
-                {{ analysisData.risk_assessment.level }}
+                {{ getLocalizedRiskLevel(analysisData.risk_assessment.level, currentLanguage) }}
               </div>
             </div>
             <div class="mb-3">
@@ -467,31 +467,6 @@
 
 
     </main>
-
-    <!-- 刷新进度弹窗 -->
-    <div v-if="showRefreshModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center">
-      <div class="bg-gray-900 rounded-xl p-6 w-[320px] shadow-xl border border-gray-800">
-        <h3 class="text-lg font-medium text-center mb-4">{{ $t('analysis.refreshing_data') }}</h3>
-
-        <!-- 进度条 -->
-        <div class="relative h-3 bg-gray-800 rounded-full overflow-hidden mb-2">
-          <div
-            class="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-primary rounded-full transition-all duration-300"
-            :style="{ width: `${refreshProgress}%` }"
-          ></div>
-        </div>
-
-        <!-- 进度百分比 -->
-        <div class="text-center text-sm text-gray-400 mb-4">
-          {{ Math.round(refreshProgress) }}%
-        </div>
-
-        <!-- 动态提示文本 -->
-        <p class="text-sm text-gray-300 text-center min-h-[48px]">
-          {{ refreshText }}
-        </p>
-      </div>
-    </div>
 
     <!-- 底部导航栏 -->
     <nav class="absolute bottom-0 left-0 right-0 bg-[#0F172A]/95 backdrop-blur-md border-t border-gray-800">
@@ -889,18 +864,30 @@ const formatPercent = (value?: number | string | null) => {
 // 获取指标趋势样式
 const getIndicatorClass = (trend?: string) => {
   if (!trend) return 'text-gray-400'
-  if (trend === 'bullish' || trend === '看涨' || trend === '支持当前趋势') return 'text-green-400'
-  if (trend === 'bearish' || trend === '看跌' || trend === '不支持当前趋势') return 'text-red-400'
+  if (
+    trend === 'bullish' || trend === '看涨' || trend === '支持当前趋势' ||
+    trend === 'up'
+  ) return 'text-green-400'
+  if (
+    trend === 'bearish' || trend === '看跌' || trend === '不支持当前趋势' ||
+    trend === 'down'
+  ) return 'text-red-400'
   if (trend === 'neutral' || trend === '中性') return 'text-yellow-400'
   return 'text-gray-400'
 }
 
 // 获取指标趋势图标类名
 const getTrendIconClass = (trend?: string) => {
-  if (trend === 'bullish' || trend === '看涨' || trend === '支持当前趋势') {
+  if (
+    trend === 'bullish' || trend === '看涨' || trend === '支持当前趋势' ||
+    trend === 'up'
+  ) {
     return 'ri-arrow-up-line';
   }
-  if (trend === 'bearish' || trend === '看跌' || trend === '反对当前趋势') {
+  if (
+    trend === 'bearish' || trend === '看跌' || trend === '反对当前趋势' ||
+    trend === 'down'
+  ) {
     return 'ri-arrow-down-line';
   }
   return 'ri-subtract-line';
@@ -928,255 +915,35 @@ const getIndicatorIconForImage = (trend?: string) => {
   </span>`;
 }
 
-// 模拟真实刷新进度
-const simulateRefreshProgress = () => {
-  // 清除之前的定时器
-  if (refreshTimer !== null) {
-    clearInterval(refreshTimer)
-    refreshTimer = null
-  }
-
-  // 重置进度
-  refreshProgress.value = 1 // 从1%开始，让用户立即看到进度
-  showRefreshModal.value = true
-  refreshText.value = t('analysis.calculating_indicators')
-
-  // 记录开始时间
-  const startTime = Date.now()
-
-  // 使用非线性函数来模拟进度
-  // 前10秒快速增长到40%
-  // 中间10秒增长到70%
-  // 最后10秒缓慢增长到95%
-  const getProgressForTime = (elapsedMs: number): number => {
-    // 直接使用毫秒计算，不需要转换为秒
-    const elapsedSeconds = elapsedMs / 1000
-
-    // 使用平方根函数使进度条在开始时更快，后面更慢
-    if (elapsedSeconds <= 10) {
-      // 0-10秒: 1% 到 40%
-      return 1 + 39 * Math.sqrt(elapsedSeconds / 10)
-    } else if (elapsedSeconds <= 20) {
-      // 10-20秒: 40% 到 70%
-      return 40 + 30 * ((elapsedSeconds - 10) / 10)
-    } else {
-      // 20-30秒: 70% 到 95%
-      const remaining = Math.min(1, (elapsedSeconds - 20) / 10)
-      // 使用缓动函数，让后期增长更慢
-      return 70 + 25 * (1 - Math.pow(1 - remaining, 3))
-    }
-  }
-
-  // 每100ms更新一次，使动画更流畅
-  refreshTimer = setInterval(() => {
-    // 检查模态框是否仍然显示
-    if (!showRefreshModal.value) {
-      // 如果模态框已关闭，清除定时器
-      if (refreshTimer !== null) {
-        clearInterval(refreshTimer)
-        refreshTimer = null
-      }
-      return
-    }
-
-    const elapsedMs = Date.now() - startTime
-
-    // 计算当前应该显示的进度
-    const newProgress = Math.min(95, getProgressForTime(elapsedMs))
-
-    // 安全地更新进度值
-    if (refreshProgress && typeof refreshProgress.value !== 'undefined') {
-      refreshProgress.value = newProgress
-    }
-
-    // 根据进度更新提示文本
-    if (newProgress < 30) {
-      refreshText.value = t('analysis.calculating_indicators')
-    } else if (newProgress < 60) {
-      refreshText.value = t('analysis.analyzing_trends')
-    } else if (newProgress < 85) {
-      refreshText.value = t('analysis.generating_advice')
-    } else {
-      refreshText.value = t('analysis.finalizing_data')
-    }
-
-    // 达到95%后停止，等待实际请求完成
-    if (newProgress >= 95) {
-      if (refreshTimer !== null) {
-        clearInterval(refreshTimer)
-        refreshTimer = null
-      }
-    }
-  }, 100) // 每100毫秒更新一次进度，使动画更流畅
-}
-
 // 强制刷新数据
 const forceRefreshData = async () => {
   try {
-    // 如果已经在刷新中，则不执行
-    if (showRefreshModal.value) {
-      return
-    }
-
-    // 开始模拟进度
-    simulateRefreshProgress()
-
-    // 检查是否有当前交易对
+    // 只做数据刷新，不再模拟进度条
     if (!currentSymbol.value) {
       error.value = '无法获取当前交易对信息'
       return
     }
+    // 重置错误和未找到状态
+    error.value = null
+    isTokenNotFound.value = false
+    analysisLoading.value = true
 
-    try {
-      // 更新提示文本
-      refreshText.value = '正在从币安获取最新市场数据...'
-
-      try {
-        // 重置所有状态，但保留现有数据直到新数据加载完成
-        error.value = null
-        isTokenNotFound.value = false
-        analysisLoading.value = true
-
-        // 优先加载分析数据 - 强制刷新
-        const refreshResponse = await getTechnicalAnalysis(currentSymbol.value)
-        // 强制刷新后再请求一次普通数据，确保获取最新数据
-        await new Promise(resolve => setTimeout(resolve, 1000)) // 等待1秒
-        const latestResponse = await getTechnicalAnalysis(currentSymbol.value)
-
-        // 使用最新的数据（如果有）
-        const dataToFormat = latestResponse || refreshResponse
-
-        // 获取当前语言
-        const currentLanguage = localStorage.getItem('language') || 'en-US'
-
-        // 确保数据格式化，填充可能缺失的字段，并应用翻译
-        const formattedData = formatTechnicalAnalysisData(dataToFormat, currentLanguage)
-
-        // 更新分析数据
-        analysisData.value = formattedData
-
-
-
-        // 重置代币未找到状态
-        isTokenNotFound.value = false
-
-        // 标记分析数据加载完成
-        analysisLoading.value = false
-
-        // 确保视图更新
-        await nextTick()
-
-        // 完成刷新 - 平滑过渡到100%
-        refreshText.value = '数据刷新完成！'
-
-        // 从当前进度平滑过渡到100%
-        const currentProgress = refreshProgress.value
-        const startTransition = Date.now()
-        const transitionDuration = 500 // 500毫秒的过渡时间
-
-        const transitionInterval = setInterval(() => {
-          const elapsedMs = Date.now() - startTransition
-          const transitionProgress = Math.min(1, elapsedMs / transitionDuration)
-
-          // 使用缓动函数使过渡更自然
-          const easedProgress = 1 - Math.pow(1 - transitionProgress, 2)
-          const newProgress = currentProgress + (100 - currentProgress) * easedProgress
-
-          refreshProgress.value = newProgress
-
-          if (transitionProgress >= 1) {
-            clearInterval(transitionInterval)
-            refreshProgress.value = 100
-
-            // 延迟关闭弹窗，让用户看到100%的进度
-            setTimeout(() => {
-              showRefreshModal.value = false
-            }, 500)
-          }
-        }, 16) // 约60fps的更新频率
-
-      } catch (refreshError: any) {
-        // 更新提示文本
-        refreshText.value = '强制刷新失败，正在尝试获取缓存数据...'
-
-        // 强制刷新失败处理
-
-        // 检查是否是服务器错误（404或500）
-        if (refreshError.response?.status === 404 || refreshError.response?.status >= 500) {
-
-          isTokenNotFound.value = true;
-
-          // 关闭进度弹窗
-          setTimeout(() => {
-            showRefreshModal.value = false;
-          }, 1000);
-
-          return;
-        }
-
-        // 处理响应中包含的详细错误信息
-        // 错误信息已在UI中显示，不需要额外处理
-
-        // 检查是否仍是未找到状态
-        if (
-          refreshError.response?.data?.status === 'not_found' ||
-          (typeof refreshError.response?.data === 'object' &&
-           refreshError.response?.data !== null &&
-           'status' in refreshError.response.data &&
-           refreshError.response.data.status === 'not_found')
-        ) {
-
-          isTokenNotFound.value = true;
-        }
-      }
-    } catch (err: any) {
-      console.error('数据刷新失败:', err)
-
-      // 显示错误信息
-      if (err.message?.includes('Network Error') || err.message?.includes('timeout')) {
-        error.value = '网络连接错误，请检查您的网络连接并重试'
-      } else {
-        error.value = err.message || '刷新数据失败'
-      }
-
-      // 关闭进度弹窗 - 平滑过渡到100%
-      refreshText.value = '加载失败，请稍后重试'
-
-      // 从当前进度平滑过渡到100%
-      const currentProgress = refreshProgress.value
-      const startTransition = Date.now()
-      const transitionDuration = 500 // 500毫秒的过渡时间
-
-      const transitionInterval = setInterval(() => {
-        const elapsedMs = Date.now() - startTransition
-        const transitionProgress = Math.min(1, elapsedMs / transitionDuration)
-
-        // 使用缓动函数使过渡更自然
-        const easedProgress = 1 - Math.pow(1 - transitionProgress, 2)
-        const newProgress = currentProgress + (100 - currentProgress) * easedProgress
-
-        refreshProgress.value = newProgress
-
-        if (transitionProgress >= 1) {
-          clearInterval(transitionInterval)
-          refreshProgress.value = 100
-
-          // 延迟关闭弹窗，让用户看到100%的进度
-          setTimeout(() => {
-            showRefreshModal.value = false
-          }, 500)
-        }
-      }, 16) // 约60fps的更新频率
-    }
+    // 强制刷新数据
+    const refreshResponse = await getTechnicalAnalysis(currentSymbol.value)
+    // 等待1秒，确保后端数据已刷新
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    const latestResponse = await getTechnicalAnalysis(currentSymbol.value)
+    const dataToFormat = latestResponse || refreshResponse
+    const currentLanguage = localStorage.getItem('language') || 'en-US'
+    const formattedData = formatTechnicalAnalysisData(dataToFormat, currentLanguage)
+    analysisData.value = formattedData
+    isTokenNotFound.value = false
+    analysisLoading.value = false
+    await nextTick()
   } catch (e) {
     console.error('强制刷新数据失败:', e)
     error.value = e instanceof Error ? e.message : '刷新数据失败'
-  } finally {
-    // 确保定时器被清除
-    if (refreshTimer !== null) {
-      clearInterval(refreshTimer)
-      refreshTimer = null
-    }
+    analysisLoading.value = false
   }
 }
 
@@ -1532,6 +1299,38 @@ const getIndicatorBgColor = (trend?: string) => {
   }
   return 'rgba(156,163,175,0.12)'; // 中性
 }
+
+type ActionType = 'buy' | 'sell' | 'hold' | 'wait' | string;
+type RiskLevelType = 'high' | 'medium' | 'low' | string;
+type LangType = 'en-US' | 'zh-CN' | 'ja-JP' | 'ko-KR';
+
+const actionMap: Record<LangType, Record<string, string>> = {
+  'en-US': { buy: 'Buy', sell: 'Sell', hold: 'Hold', wait: 'Wait' },
+  'zh-CN': { buy: '买入', sell: '卖出', hold: '持有', wait: '等待' },
+  'ja-JP': { buy: '買い', sell: '売り', hold: 'ホールド', wait: '待機' },
+  'ko-KR': { buy: '매수', sell: '매도', hold: '보유', wait: '대기' }
+}
+
+const riskLevelMap: Record<LangType, Record<string, string>> = {
+  'en-US': { high: 'High', medium: 'Medium', low: 'Low' },
+  'zh-CN': { high: '高', medium: '中', low: '低' },
+  'ja-JP': { high: '高', medium: '中', low: '低' },
+  'ko-KR': { high: '높음', medium: '중간', low: '낮음' }
+}
+
+const getLocalizedAction = (action: ActionType, lang: LangType): string => {
+  if (!action) return '--'
+  const map = actionMap[lang] || actionMap['en-US']
+  return map[action.toLowerCase()] || map['wait'] || action
+}
+
+const getLocalizedRiskLevel = (level: RiskLevelType, lang: LangType): string => {
+  if (!level) return '--'
+  const map = riskLevelMap[lang] || riskLevelMap['en-US']
+  return map[level.toLowerCase()] || map['medium'] || level
+}
+
+const currentLanguage: LangType = (localStorage.getItem('language') as LangType) || 'zh-CN';
 
 </script>
 

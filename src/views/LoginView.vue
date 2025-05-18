@@ -15,6 +15,11 @@
     <!-- 主要内容区域 -->
     <main class="flex-1 pt-16 pb-16">
       <div class="max-w-[375px] mx-auto px-4">
+        <!-- Logo和应用名称 -->
+        <div class="flex flex-col items-center justify-center mt-8 mb-6">
+          <img src="/icons/icon128.png" alt="Cooltrade Logo" class="w-16 h-16 mb-2 rounded-lg shadow-lg" />
+          <div class="text-2xl font-bold text-white tracking-wide mb-1">Cooltrade</div>
+        </div>
         <form @submit.prevent="handleLogin" class="space-y-6">
           <div v-if="error" class="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
             {{ error }}
