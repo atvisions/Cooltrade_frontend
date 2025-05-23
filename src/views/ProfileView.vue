@@ -4,7 +4,7 @@
     <header class="fixed top-0 w-full z-10 bg-[#0F172A]/95 backdrop-blur-md border-b border-gray-800">
       <div class="max-w-[375px] mx-auto">
         <div class="flex items-center h-12 px-4">
-          <h1 class="text-lg font-semibold">{{ t('profile.profile') }}</h1>
+          <h1 class="text-lg font-semibold" v-text="t('nav.settings')"></h1>
         </div>
       </div>
     </header>
@@ -41,7 +41,7 @@
               <!-- 用户信息 -->
               <div class="flex-1">
                 <h2 class="text-base font-semibold">{{ userInfo.email }}</h2>
-                <p class="text-gray-500 text-xs mt-1">注册时间: {{ formatDate(userInfo.created_at) }}</p>
+                <p class="text-gray-500 text-xs mt-1"><span v-text="t('profile.registration_time')"></span>: {{ formatDate(userInfo.created_at) }}</p>
               </div>
             </div>
           </div>
@@ -50,7 +50,7 @@
           <div class="space-y-4">
             <router-link to="/change-password" class="w-full py-3 px-4 bg-gray-800 text-white rounded-lg font-medium flex items-center">
               <i class="ri-lock-password-line mr-3"></i>
-              {{ t('auth.change_password') }}
+              <span v-text="t('auth.change_password')"></span>
               <i class="ri-arrow-right-s-line ml-auto"></i>
             </router-link>
 
@@ -60,7 +60,7 @@
               @click="showLanguageModal = true"
             >
               <i class="ri-global-line mr-3"></i>
-              {{ t('profile.language_settings') }}
+              <span v-text="t('profile.language_settings')"></span>
               <div class="ml-auto flex items-center">
                 <span class="text-gray-400 mr-2">{{ getCurrentLanguageName() }}</span>
                 <i class="ri-arrow-right-s-line"></i>
@@ -98,24 +98,24 @@
                     @click="showLanguageModal = false"
                     class="py-2 px-4 bg-primary text-white rounded-lg"
                   >
-                    {{ t('common.confirm') }}
+                    <span v-text="t('common.confirm')"></span>
                   </button>
                 </div>
               </div>
             </div>
 
             <a
-              href="https://www.kxianjunshi.com/privacy-policy/"
+              href="https://www.cooltrade.xyz/privacy-policy/"
               target="_blank"
               class="w-full py-3 px-4 bg-gray-800 text-white rounded-lg font-medium flex items-center"
             >
               <i class="ri-shield-check-line mr-3"></i>
-              {{ t('common.privacy_policy') }}
+              <span v-text="t('common.privacy_policy')"></span>
               <i class="ri-external-link-line ml-auto"></i>
             </a>
             <button class="w-full py-3 px-4 bg-gray-800 text-white rounded-lg font-medium flex items-center">
               <i class="ri-information-line mr-3"></i>
-              {{ t('common.about_us') }}
+              <span v-text="t('common.about_us')"></span>
               <i class="ri-arrow-right-s-line ml-auto"></i>
             </button>
             <button
@@ -123,7 +123,7 @@
               @click="handleLogout"
             >
               <i class="ri-logout-box-line mr-3"></i>
-              {{ t('auth.logout') }}
+              <span v-text="t('auth.logout')"></span>
             </button>
           </div>
         </template>
@@ -133,14 +133,18 @@
     <!-- 底部导航栏 -->
     <nav class="fixed bottom-0 w-full bg-[#0F172A]/95 backdrop-blur-md border-t border-gray-800">
       <div class="max-w-[375px] mx-auto">
-        <div class="grid grid-cols-2 h-16">
+        <div class="grid grid-cols-3 h-16">
           <router-link to="/" class="flex flex-col items-center justify-center text-gray-500">
             <i class="ri-line-chart-line ri-lg w-6 h-6 flex items-center justify-center"></i>
-            <span class="text-xs mt-0.5">{{ t('analysis.market_data') }}</span>
+            <span class="text-xs mt-0.5" v-text="t('nav.market')"></span>
+          </router-link>
+          <router-link to="/points" class="flex flex-col items-center justify-center text-gray-500">
+            <i class="ri-coin-line ri-lg w-6 h-6 flex items-center justify-center"></i>
+            <span class="text-xs mt-0.5" v-text="t('nav.points')"></span>
           </router-link>
           <router-link to="/profile" class="flex flex-col items-center justify-center text-primary border-t-2 border-primary">
-            <i class="ri-user-3-line ri-lg w-6 h-6 flex items-center justify-center"></i>
-            <span class="text-xs mt-0.5">{{ t('profile.profile') }}</span>
+            <i class="ri-settings-3-line ri-lg w-6 h-6 flex items-center justify-center"></i>
+            <span class="text-xs mt-0.5" v-text="t('nav.settings')"></span>
           </router-link>
         </div>
       </div>
@@ -149,7 +153,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/api'
 import axios from 'axios'
@@ -171,13 +175,20 @@ const userInfo = ref({
 const showLanguageModal = ref(false)
 
 // 当前语言
-const currentLanguage = computed(() => {
-  return locale.value
+const currentLanguage = ref(locale.value)
+
+// 监听语言变化
+watch(locale, (newLocale) => {
+  console.log(`[ProfileView] 检测到语言变化: ${newLocale}`)
+  currentLanguage.value = newLocale
 })
 
 // 获取当前语言的名称
 const getCurrentLanguageName = (): string => {
-  const lang = languages.find(l => l.code === currentLanguage.value)
+  // 使用 currentLanguage.value 而不是 locale.value
+  const langCode = currentLanguage.value
+  console.log(`[ProfileView] 获取语言名称，当前语言代码: ${langCode}`)
+  const lang = languages.find(l => l.code === langCode)
   return lang ? lang.name : 'Unknown'
 }
 
@@ -202,15 +213,49 @@ const getLangFlag = (langCode: string): string => {
 
 // 选择语言并关闭模态框
 const selectLanguage = (lang: string) => {
-  setLanguage(lang)
+  console.log(`[ProfileView] 选择语言: ${lang}`);
+
+  // 检查是否与当前语言相同，如果相同则只关闭模态框
+  if (currentLanguage.value === lang) {
+    console.log(`[ProfileView] 语言未变化，保持为: ${lang}`);
+    showLanguageModal.value = false;
+    return;
+  }
+
+  // 关闭模态框（先关闭，避免模态框中的文本更新导致闪烁）
+  showLanguageModal.value = false;
+
+  // 立即更新当前组件的语言
+  currentLanguage.value = lang;
 
   // 如果用户已登录，更新用户信息
   if (isLoggedIn.value) {
-    updateUserLanguage(lang)
+    updateUserLanguage(lang);
   }
 
-  // 关闭模态框
-  showLanguageModal.value = false
+  // 设置新语言（这会触发全局语言变更事件）
+  // 注意：setLanguage 函数内部会处理语言变更事件和强制刷新
+  setLanguage(lang);
+
+  // 不再需要额外触发事件，避免重复触发
+  // 移除以下代码以避免多次触发语言变更事件
+  /*
+  setTimeout(() => {
+    console.log(`[ProfileView] 强制刷新组件，语言: ${lang}`);
+
+    // 强制重新渲染当前组件
+    const app = document.getElementById('app');
+    if (app) {
+      app.classList.add('force-rerender');
+      setTimeout(() => {
+        app.classList.remove('force-rerender');
+      }, 10);
+    }
+
+    // 触发自定义事件，通知组件刷新
+    window.dispatchEvent(new CustomEvent('profile-language-changed', { detail: { language: lang } }));
+  }, 100);
+  */
 }
 
 const isLoggedIn = computed(() => {
@@ -220,7 +265,18 @@ const isLoggedIn = computed(() => {
 const formatDate = (dateString: string) => {
   if (!dateString) return ''
   const date = new Date(dateString)
-  return date.toLocaleDateString('zh-CN', {
+
+  // 根据当前语言选择区域设置
+  let locale = 'en-US';
+  const currentLang = localStorage.getItem('language');
+
+  if (currentLang === 'zh-CN') locale = 'zh-CN';
+  else if (currentLang === 'ja-JP') locale = 'ja-JP';
+  else if (currentLang === 'ko-KR') locale = 'ko-KR';
+
+  console.log(`[ProfileView] 格式化日期，使用区域设置: ${locale}`);
+
+  return date.toLocaleDateString(locale, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -230,13 +286,28 @@ const formatDate = (dateString: string) => {
 }
 
 const fetchUserInfo = async () => {
-  if (!isLoggedIn.value) return
+  if (!isLoggedIn.value) return;
 
   try {
+    console.log('[ProfileView] 开始获取用户信息');
+
     // 先尝试从本地存储获取用户信息
-    const savedUserInfo = localStorage.getItem('userInfo')
+    const savedUserInfo = localStorage.getItem('userInfo');
     if (savedUserInfo) {
-      userInfo.value = JSON.parse(savedUserInfo)
+      try {
+        const parsedInfo = JSON.parse(savedUserInfo);
+        userInfo.value = parsedInfo;
+        console.log('[ProfileView] 从本地存储加载用户信息:', parsedInfo);
+      } catch (e) {
+        console.error('[ProfileView] 解析本地用户信息失败:', e);
+      }
+    }
+
+    // 检查是否在扩展环境中
+    const isExtension = window.location.protocol === 'chrome-extension:';
+    if (isExtension) {
+      console.log('[ProfileView] 在扩展环境中，使用本地存储的用户信息');
+      return;
     }
 
     // 然后从服务器获取最新信息
@@ -245,7 +316,7 @@ const fetchUserInfo = async () => {
       ? '/api/auth/profile/'
       : `${api.defaults.baseURL}/auth/profile/`;
 
-
+    console.log('[ProfileView] 从服务器获取用户信息:', url);
 
     const response = await axios.get(url, {
       headers: {
@@ -254,13 +325,17 @@ const fetchUserInfo = async () => {
       }
     });
 
+    console.log('[ProfileView] 服务器响应:', response);
+
     const data = response.data;
     if (data?.status === 'success' && data?.data) {
       userInfo.value = data.data;
       // 更新本地存储
       localStorage.setItem('userInfo', JSON.stringify(data.data));
+      console.log('[ProfileView] 更新用户信息:', data.data);
     }
   } catch (error) {
+    console.error('[ProfileView] 获取用户信息失败:', error);
     // 获取用户信息失败，使用本地存储的信息
   }
 }
@@ -268,25 +343,37 @@ const fetchUserInfo = async () => {
 // 更新用户语言设置
 const updateUserLanguage = async (lang: string) => {
   try {
-    const url = process.env.NODE_ENV !== 'production'
-      ? '/api/auth/profile/'
-      : `${api.defaults.baseURL}/auth/profile/`;
+    // 在扩展环境中，只更新本地存储，不发送 API 请求
+    const isExtension = window.location.protocol === 'chrome-extension:';
 
-    await axios.put(url,
-      { language: lang },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': localStorage.getItem('token') || ''
+    if (!isExtension) {
+      // 在网页环境中，发送 API 请求
+      const url = process.env.NODE_ENV !== 'production'
+        ? '/api/auth/profile/'
+        : `${api.defaults.baseURL}/auth/profile/`;
+
+      await axios.put(url,
+        { language: lang },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': localStorage.getItem('token') || ''
+          }
         }
-      }
-    );
+      );
+    } else {
+      console.log('在扩展环境中，跳过 API 请求，只更新本地存储');
+    }
 
     // 更新本地用户信息
     userInfo.value.language = lang;
     localStorage.setItem('userInfo', JSON.stringify(userInfo.value));
   } catch (error) {
     console.error('更新用户语言设置失败:', error);
+
+    // 即使 API 请求失败，也更新本地存储
+    userInfo.value.language = lang;
+    localStorage.setItem('userInfo', JSON.stringify(userInfo.value));
   }
 }
 
@@ -298,12 +385,72 @@ const handleLogout = () => {
   router.push('/login')
 }
 
-onMounted(() => {
-  fetchUserInfo()
+// 设置语言变更监听器
+const setupLanguageChangeListener = () => {
+  // 用于防止重复处理的变量
+  let lastProcessedLang = localStorage.getItem('language') || 'en-US';
+  let lastProcessedTime = Date.now();
 
-  // 如果用户已登录，使用用户的语言设置
+  // 监听语言变更事件
+  window.addEventListener('language-changed', (event) => {
+    const newLang = (event as CustomEvent).detail?.language || localStorage.getItem('language') || 'en-US';
+
+    // 防止短时间内重复处理相同的语言
+    const now = Date.now();
+    if (newLang === lastProcessedLang && now - lastProcessedTime < 1000) {
+      console.log(`[ProfileView] 忽略重复的语言变更事件: ${newLang}`);
+      return;
+    }
+
+    console.log(`[ProfileView] 收到语言变更事件: ${newLang}`);
+    currentLanguage.value = newLang;
+    lastProcessedLang = newLang;
+    lastProcessedTime = now;
+  });
+
+  // 监听强制刷新事件
+  window.addEventListener('force-refresh-i18n', () => {
+    const newLang = localStorage.getItem('language') || 'en-US';
+
+    // 防止短时间内重复处理相同的语言
+    const now = Date.now();
+    if (newLang === lastProcessedLang && now - lastProcessedTime < 1000) {
+      console.log(`[ProfileView] 忽略重复的强制刷新事件: ${newLang}`);
+      return;
+    }
+
+    console.log(`[ProfileView] 收到强制刷新事件: ${newLang}`);
+    currentLanguage.value = newLang;
+    lastProcessedLang = newLang;
+    lastProcessedTime = now;
+  });
+}
+
+onMounted(async () => {
+  // 先获取用户信息
+  await fetchUserInfo();
+
+  // 确保当前语言与存储的语言一致
+  const storedLang = localStorage.getItem('language') || 'en-US';
+
+  // 如果用户已登录，优先使用用户的语言设置
   if (isLoggedIn.value && userInfo.value.language) {
-    setLanguage(userInfo.value.language)
+    // 只有当用户语言与当前语言不同时才设置
+    if (userInfo.value.language !== storedLang) {
+      console.log(`[ProfileView] 使用用户语言设置: ${userInfo.value.language}，当前语言: ${storedLang}`);
+      setLanguage(userInfo.value.language);
+    } else {
+      console.log(`[ProfileView] 用户语言与当前语言一致: ${storedLang}`);
+      // 确保当前组件的语言与存储的语言一致
+      currentLanguage.value = storedLang;
+    }
+  } else {
+    // 确保当前组件的语言与存储的语言一致
+    console.log(`[ProfileView] 使用存储的语言: ${storedLang}`);
+    currentLanguage.value = storedLang;
   }
+
+  // 设置语言变更监听器
+  setupLanguageChangeListener();
 })
 </script>

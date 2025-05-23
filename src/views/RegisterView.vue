@@ -122,6 +122,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 import { auth } from '@/api'
 import * as ExtensionRouter from '@/utils/extension-router'
 import { useEnhancedI18n } from '@/utils/i18n-helper'
@@ -246,8 +247,30 @@ const handleSendCode = async () => {
 
   isSendingCode.value = true
   try {
-    await auth.sendCode({ email: formData.value.email })
-    startCountdown()
+    console.log('发送验证码请求:', formData.value.email)
+
+    // 使用 axios 直接发送请求，避免使用 api 实例
+    const baseUrl = process.env.NODE_ENV === 'development' ? '/api' : 'https://www.cooltrade.xyz/api';
+    const url = `${baseUrl}/auth/send-code/`;
+
+    console.log('发送验证码请求URL:', url);
+
+    const response = await axios.post(url, {
+      email: formData.value.email.trim()
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log('验证码请求响应:', response);
+
+    if (response.data && response.data.status === 'success') {
+      startCountdown()
+      generalError.value = ''
+    } else {
+      generalError.value = response.data?.message || t('errors.send_code_failed')
+    }
   } catch (error: any) {
     console.error(t('errors.send_code_failed_log'), error)
     if (error.response?.data?.message?.email) {
@@ -313,15 +336,33 @@ const handleRegister = async () => {
       code: formData.value.code.trim(),
       invitation_code: formData.value.invitation_code.trim()
     }
-    console.log('Sending registration request with data:', requestData)
+    console.log('Sending registration request with data:', {
+      ...requestData,
+      password: '***'
+    })
 
-    const response = await auth.register(requestData)
-    console.log('Registration response:', response)
+    // 使用 axios 直接发送请求，避免使用 api 实例
+    const baseUrl = process.env.NODE_ENV === 'development' ? '/api' : 'https://www.cooltrade.xyz/api';
+    const url = `${baseUrl}/auth/register/`;
 
-    // 注册成功后清除保存的表单数据
-    localStorage.removeItem('registerFormData')
-    // 直接跳转到登录页面
-    router.push('/login')
+    console.log('注册请求URL:', url);
+
+    const response = await axios.post(url, requestData, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log('注册响应:', response);
+
+    if (response.data && response.data.status === 'success') {
+      // 注册成功后清除保存的表单数据
+      localStorage.removeItem('registerFormData')
+      // 直接跳转到登录页面
+      router.push('/login')
+    } else {
+      generalError.value = response.data?.message || t('errors.registration_failed')
+    }
   } catch (error: any) {
     console.error(t('errors.registration_failed_log'), error)
     if (error.response?.data?.message) {

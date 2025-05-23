@@ -1,4 +1,35 @@
 export default {
+  points: {
+    my_points: 'マイポイント',
+    total_points: '合計ポイント',
+    ranking: 'ランキング',
+    earn_points: 'ポイント獲得',
+    invite_friends: '友達招待',
+    invite: '招待',
+    points: 'ポイント',
+    history: 'ポイント履歴',
+    history_all: '全て',
+    history_earned: '獲得',
+    history_used: '使用',
+    no_history: 'ポイント履歴がありません',
+    invitation_reward_desc: '招待報酬',
+    daily_trade_desc: '日次取引報酬',
+    used_for_discount: 'ポイント割引に使用',
+    your_invitation_code: 'あなたの招待コード',
+    share: 'シェア',
+    copy_success: 'コピー完了',
+    share_invitation_title: '友達を招待',
+    share_invitation_text: '私の招待コード {code} を使って登録すると、{points} ポイントがもらえます！',
+    daily_trade: 'デイリートレード',
+    go_trade: 'トレードへ',
+    invitation_code: '招待コード',
+    invitation_records: '招待履歴',
+    no_invitation_records: '招待履歴がありません',
+    total_invited: '{count}人を招待済み',
+    invitation_reward: '友達が招待コードで登録すると{points}ポイントを獲得できます',
+    user: 'ユーザー',
+    registered_at: '登録日時'
+  },
   common: {
     app_name: 'Cooltrade',
     loading: '読み込み中...',
@@ -71,6 +102,7 @@ export default {
     email: 'メールアドレス',
     created_at: '作成日時',
     updated_at: '更新日時',
+    registration_time: '登録日時',
     language_preference: '言語設定',
     generate_invitation: '招待コード生成',
     invitation_codes: '招待コード一覧',
@@ -183,7 +215,8 @@ export default {
   },
   nav: {
     market: 'マーケット',
-    profile: 'プロフィール'
+    points: 'ポイント',
+    settings: '設定'
   },
   tokenNotFound: {
     title: '{symbol} データが見つかりません',

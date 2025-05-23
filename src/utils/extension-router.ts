@@ -11,7 +11,7 @@ import router from '@/router'
  */
 export const isExtensionEnvironment = (): boolean => {
   return (
-    window.location.protocol === 'chrome-extension:' || 
+    window.location.protocol === 'chrome-extension:' ||
     window.location.protocol === 'moz-extension:' ||
     window.location.protocol === 'extension:'
   )
@@ -26,18 +26,18 @@ export const navigateTo = (path: string, query?: Record<string, string>): void =
   if (isExtensionEnvironment()) {
     // 在扩展环境中，使用 window.location 导航
     let url = `#${path}`
-    
+
     // 添加查询参数
     if (query) {
       const queryString = Object.entries(query)
         .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
         .join('&')
-      
+
       if (queryString) {
         url += `?${queryString}`
       }
     }
-    
+
     window.location.href = url
   } else {
     // 在普通环境中，使用 Vue Router 导航
@@ -94,6 +94,13 @@ export const goToProfile = (): void => {
 }
 
 /**
+ * 导航到积分页
+ */
+export const goToPoints = (): void => {
+  navigateTo('/points')
+}
+
+/**
  * 导航到修改密码页
  */
 export const goToChangePassword = (): void => {
@@ -109,5 +116,6 @@ export default {
   goToForgotPassword,
   goToHome,
   goToProfile,
+  goToPoints,
   goToChangePassword
 }

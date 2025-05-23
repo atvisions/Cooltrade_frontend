@@ -73,9 +73,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import axios from 'axios'
 import * as ExtensionRouter from '@/utils/extension-router'
 import { useEnhancedI18n } from '@/utils/i18n-helper'
+import { auth } from '@/api'
 
 // 使用增强的 i18n
 const { t } = useEnhancedI18n()
@@ -113,58 +113,47 @@ const handleLogin = async () => {
 
   loading.value = true
   try {
-    // 使用相对路径，让 Vite 的代理服务器处理请求
-    const url = '/api/auth/login/';
-    console.log('Login URL:', url);
+    console.log('Attempting login with:', { email: formData.value.email, password: '***' });
 
-    // 准备请求数据
-    const requestData = {
-      email: formData.value.email.trim(),
-      password: formData.value.password.trim()
-    };
-
-    console.log('Request data:', requestData);
-
-    // 将对象转换为 JSON 字符串，确保格式与 curl 请求一致
-    const jsonData = JSON.stringify(requestData);
-    console.log('JSON data:', jsonData);
-
-    const response = await axios.post(url, jsonData, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
+    const response = await auth.login({
+      email: formData.value.email,
+      password: formData.value.password
     });
 
-    const data = response.data;
-    console.log('Login response:', data);
+    console.log('Login response:', response);
 
     // 检查响应格式
-    if (data.status === 'success' && data.data) {
+    if (response.status === 'success' && response.data) {
       // 保存 token
-      const token = data.data.token
-      const userData = data.data.user
+      const token = response.data.token;
+      const userData = response.data.user;
 
       if (token) {
         // 添加Token前缀
-        localStorage.setItem('token', `Token ${token}`)
+        localStorage.setItem('token', `Token ${token}`);
 
         // 保存用户信息
         if (userData) {
-          localStorage.setItem('userInfo', JSON.stringify(userData))
+          localStorage.setItem('userInfo', JSON.stringify(userData));
         }
 
+        // 输出调试信息
+        console.log('已保存token:', localStorage.getItem('token'));
+        console.log('已保存用户信息:', localStorage.getItem('userInfo'));
+
         // 跳转到重定向页面或首页
-        const redirectPath = route.query.redirect as string || '/'
-        router.push(redirectPath)
+        const redirectPath = route.query.redirect as string || '/';
+        router.push(redirectPath);
       } else {
-        error.value = t('errors.login_failed_no_token')
+        console.error('Token未找到', response);
+        error.value = t('errors.login_failed_no_token');
       }
     } else {
-      console.error('登录响应格式错误', data)
-      error.value = data.message || t('errors.login_failed_server_error')
+      console.error('登录响应格式错误', response);
+      error.value = response.message || t('errors.login_failed_server_error');
     }
   } catch (err: any) {
-    console.error('登录失败:', err)
+    console.error('登录失败:', err);
 
     // 详细记录错误信息
     if (err.response) {
@@ -172,7 +161,10 @@ const handleLogin = async () => {
         status: err.response.status,
         data: err.response.data,
         headers: err.response.headers
-      })
+      });
+
+      // 显示服务器返回的详细错误信息
+      console.log('服务器错误详情:', JSON.stringify(err.response.data, null, 2));
     }
 
     if (err.response?.data?.message) {
@@ -190,16 +182,18 @@ const handleLogin = async () => {
     } else if (err.response?.data?.detail) {
       error.value = err.response.data.detail;
     } else if (err.response?.status === 401) {
-      error.value = t('errors.invalid_credentials');
+      error.value = t('errors.email_or_password_incorrect');
     } else if (err.response?.status === 429) {
       error.value = t('errors.too_many_attempts');
     } else if (err.code === 'ECONNABORTED') {
-      error.value = t('errors.network_timeout');
+      error.value = t('errors.connection_timeout');
+    } else if (err.message.includes('Network Error')) {
+      error.value = t('errors.network_error');
     } else {
-      error.value = t('errors.login_failed_try_later');
+      error.value = t('errors.login_failed');
     }
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 </script>

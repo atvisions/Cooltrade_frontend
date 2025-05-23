@@ -25,6 +25,40 @@ export const isExtensionEnvironment = computed(() => {
 export const useEnhancedI18n = () => {
   const { t: vueT, locale } = useI18n()
 
+  // 添加调试信息
+  const isDebug = localStorage.getItem('i18n_debug') === 'true';
+
+  // 确保 locale 与 localStorage 中的语言设置同步
+  const syncLocale = () => {
+    const storedLang = localStorage.getItem('language');
+    if (storedLang && ['zh-CN', 'en-US', 'ja-JP', 'ko-KR'].includes(storedLang) && storedLang !== locale.value) {
+      if (isDebug) {
+        console.log(`[i18n-helper] 同步 locale，从 ${locale.value} 更新为 ${storedLang}`);
+      }
+      locale.value = storedLang as any;
+    }
+  };
+
+  // 初始同步
+  syncLocale();
+
+  // 监听语言变更事件
+  window.addEventListener('language-changed', (event) => {
+    const newLang = (event as CustomEvent).detail?.language || localStorage.getItem('language') || 'en-US';
+    if (isDebug) {
+      console.log(`[i18n-helper] 收到语言变更事件: ${newLang}`);
+    }
+    locale.value = newLang as any;
+  });
+
+  // 监听强制刷新事件
+  window.addEventListener('force-refresh-i18n', () => {
+    syncLocale();
+    if (isDebug) {
+      console.log(`[i18n-helper] 收到强制刷新事件，当前语言: ${locale.value}`);
+    }
+  });
+
   /**
    * 增强的翻译函数
    * 在扩展环境中优先使用直接加载器
@@ -32,8 +66,14 @@ export const useEnhancedI18n = () => {
    * @returns 翻译结果
    */
   const t = (key: string, params?: Record<string, any>) => {
+    // 每次翻译前同步语言设置
+    syncLocale();
+
     // 在扩展环境中，优先使用直接加载器
     if (isExtensionEnvironment.value) {
+      if (isDebug) {
+        console.log(`[i18n-helper] 使用直接加载器翻译: ${key}, 当前语言: ${locale.value}`);
+      }
       const result = directT(key, params)
       // 如果直接加载器返回的结果就是键名，尝试使用 vue-i18n
       if (result === key) {
@@ -44,6 +84,9 @@ export const useEnhancedI18n = () => {
       return result
     }
     // 在非扩展环境中，使用 vue-i18n
+    if (isDebug) {
+      console.log(`[i18n-helper] 使用 vue-i18n 翻译: ${key}, 当前语言: ${locale.value}`);
+    }
     return vueT(key, params)
   }
 

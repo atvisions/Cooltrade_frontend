@@ -1,3 +1,10 @@
+// 初始化环境变量
+let envConfig = {
+  baseApiUrl: 'https://www.cooltrade.xyz/api',
+  env: 'production',
+  token: null
+};
+
 // 监听来自content script的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'RELOAD_RESOURCES') {
@@ -16,10 +23,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       console.error('获取资源URL失败:', error)
       sendResponse({ status: 'error', error: error.message })
     }
+  } else if (message.type === 'SET_ENV_CONFIG') {
+    // 设置环境配置
+    envConfig = { ...envConfig, ...message.data };
+    console.log('Background script 环境配置已更新:', envConfig);
+    sendResponse({ status: 'success' });
   } else if (message.type === 'PROXY_API_REQUEST') {
     // 处理API代理请求
     handleApiProxyRequest(message.data, sendResponse)
     return true // 保持连接打开，等待异步响应
+  } else if (message.type === 'getCookie') {
+    // 处理获取 cookie 的请求
+    const { url, name } = message.data
+    chrome.cookies.get({ url: url, name: name }, (cookie) => {
+      sendResponse({ cookie: cookie })
+    })
+    return true // 保持连接打开，等待异步响应
+  } else if (message.type === 'removeCookie') {
+    // 处理删除 cookie 的请求
+    const { url, name } = message.data
+    chrome.cookies.remove({ url: url, name: name }, (details) => {
+      if (details) {
+        console.log(`Cookie ${name} from ${url} removed successfully.`, details)
+      } else {
+        console.log(`Could not remove cookie ${name} from ${url}.`)
+      }
+    })
+    return false // 不需要异步响应
   }
   return true
 })
@@ -134,8 +164,32 @@ chrome.runtime.onInstalled.addListener((details) => {
 async function handleApiProxyRequest(data, sendResponse) {
   try {
     const { url, method, headers, body } = data;
+    console.log('Background script收到API代理请求:', {
+      url: url,
+      method: method,
+      headers: headers ? { ...headers, Authorization: headers.Authorization ? '已设置' : '未设置' } : '未设置',
+      body: body ? '已设置' : '未设置'
+    });
+
     // 检查是否是强制刷新请求
     const isForceRefresh = url.includes('force_refresh=true');
+
+    // 构建完整的URL
+    let fullUrl = url;
+
+    // 使用环境配置中的 baseApiUrl
+    const baseApiUrl = envConfig.baseApiUrl || 'https://www.cooltrade.xyz/api';
+
+    console.log('Background script使用基础API URL:', baseApiUrl);
+
+    // 如果是相对路径，添加基础URL
+    if (url.startsWith('/')) {
+      fullUrl = baseApiUrl + url;
+    } else if (!url.startsWith('http')) {
+      fullUrl = baseApiUrl + '/' + url;
+    }
+
+    console.log('Background script使用完整URL:', fullUrl);
 
     // 构建请求选项
     const options = {
@@ -147,6 +201,19 @@ async function handleApiProxyRequest(data, sendResponse) {
       }
     };
 
+    // 确保认证令牌被正确传递
+    if (headers && headers.Authorization) {
+      console.log('Background script 请求包含认证令牌');
+    } else {
+      // 如果请求中没有包含认证令牌，尝试使用环境配置中的 token
+      if (envConfig.token) {
+        console.log('Background script 使用环境配置中的认证令牌');
+        options.headers.Authorization = envConfig.token;
+      } else {
+        console.warn('Background script 请求不包含认证令牌，环境配置中也没有 token');
+      }
+    }
+
     // 添加请求体（如果有）
     if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
       options.body = JSON.stringify(body);
@@ -155,16 +222,35 @@ async function handleApiProxyRequest(data, sendResponse) {
     // 设置超时
     const timeout = isForceRefresh ? 120000 : 30000; // 强制刷新使用更长的超时时间
 
+    console.log('Background script发送请求:', {
+      url: fullUrl,
+      options: {
+        method: options.method,
+        headers: options.headers ? { ...options.headers, Authorization: options.headers.Authorization ? '已设置' : '未设置' } : '未设置',
+        body: options.body ? '已设置' : '未设置'
+      }
+    });
+
     // 创建超时Promise
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error(`请求超时 (${timeout/1000}秒)`)), timeout);
     });
 
     // 创建fetch Promise
-    const fetchPromise = fetch(url, options);
+    // 使用构建的完整URL
+    const fetchPromise = fetch(fullUrl, options).catch(error => {
+      console.error('Fetch error:', error);
+      throw new Error(`Fetch failed: ${error.message}`);
+    });
 
     // 使用Promise.race竞争，谁先完成就用谁的结果
     const response = await Promise.race([fetchPromise, timeoutPromise]);
+
+    console.log('Background script收到响应:', {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers
+    });
 
     // 获取响应头
     const responseHeaders = {};
@@ -172,15 +258,19 @@ async function handleApiProxyRequest(data, sendResponse) {
       responseHeaders[key] = value;
     });
 
-    // 获取响应体
+    // 获取响应体在发送响应回去之前，先记录一下原始的响应文本
     const responseText = await response.text();
+    console.log('Background script原始响应文本:', responseText);
 
     let responseData;
     try {
       responseData = JSON.parse(responseText);
     } catch (e) {
+      console.warn('Background script响应不是JSON格式:', responseText);
       responseData = responseText;
     }
+
+    console.log('Background script处理后的响应数据:', responseData);
 
     // 发送响应回去
     sendResponse({
@@ -191,6 +281,7 @@ async function handleApiProxyRequest(data, sendResponse) {
       success: response.ok
     });
   } catch (error) {
+    console.error('Background script API代理请求失败:', error);
     sendResponse({
       success: false,
       error: error.message || '请求失败',

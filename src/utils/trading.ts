@@ -234,6 +234,12 @@ export function isExchangeUrl(url: string): boolean {
       return true;
     }
 
+    // 检查URL是否包含常见的交易所关键词
+    const commonTradeKeywords = ['trade', 'trading', 'exchange', 'spot', 'futures', 'market'];
+    if (commonTradeKeywords.some(keyword => urlObj.pathname.toLowerCase().includes(keyword))) {
+      return true;
+    }
+
     const result = exchanges.some(exchange => {
       const hostnameMatch = urlObj.hostname.includes(exchange.baseUrl);
       if (hostnameMatch) {

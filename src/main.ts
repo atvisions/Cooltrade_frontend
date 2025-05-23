@@ -29,6 +29,15 @@ languages.forEach(lang => {
 
 // 检查当前语言
 console.log('Current locale:', i18n.global.locale.value)
+
+// 导入 i18n 调试工具
+import { initI18nDebug } from './i18n-debug';
+
+// 初始化 i18n 调试
+const i18nDebug = initI18nDebug();
+
+// 打印所有可用的语言
+console.log('Available locales:', Object.keys(i18n.global.messages.value));
 console.log('=== I18N DEBUG END ===')
 
 const app = createApp(App)

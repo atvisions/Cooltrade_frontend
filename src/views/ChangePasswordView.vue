@@ -88,6 +88,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 import { auth } from '@/api'
 import { useEnhancedI18n } from '@/utils/i18n-helper'
 
@@ -138,18 +139,41 @@ const handleChangePassword = async () => {
 
   loading.value = true
   try {
-    const response = await auth.changePassword({
-      current_password: formData.value.current_password,
-      new_password: formData.value.new_password,
-      confirm_password: formData.value.confirm_password
-    })
+    console.log('发送修改密码请求');
 
-    if (response.status === 'success') {
-      success.value = t('auth.password_changed_success')
+    // 使用 axios 直接发送请求，避免使用 api 实例
+    const baseUrl = process.env.NODE_ENV === 'development' ? '/api' : 'https://www.cooltrade.xyz/api';
+    const url = `${baseUrl}/auth/change-password/`;
+
+    console.log('修改密码请求URL:', url);
+
+    // 获取认证令牌
+    const token = localStorage.getItem('token');
+    if (!token) {
+      error.value = t('errors.not_logged_in');
+      loading.value = false;
+      return;
+    }
+
+    const response = await axios.post(url, {
+      current_password: formData.value.current_password.trim(),
+      new_password: formData.value.new_password.trim(),
+      confirm_password: formData.value.confirm_password.trim()
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token
+      }
+    });
+
+    console.log('修改密码响应:', response);
+
+    if (response.data && response.data.status === 'success') {
+      success.value = t('auth.password_changed_success');
 
       // 如果返回了新的token，更新本地存储
-      if (response.data?.token) {
-        localStorage.setItem('token', `Token ${response.data.token}`)
+      if (response.data.data?.token) {
+        localStorage.setItem('token', `Token ${response.data.data.token}`);
       }
 
       // 清空表单
@@ -157,41 +181,45 @@ const handleChangePassword = async () => {
         current_password: '',
         new_password: '',
         confirm_password: ''
-      }
+      };
 
       // 3秒后返回个人中心
       setTimeout(() => {
-        router.push('/profile')
-      }, 3000)
+        router.push('/profile');
+      }, 3000);
     } else {
-      error.value = response.message || t('errors.password_change_failed')
+      error.value = response.data?.message || t('errors.password_change_failed');
     }
   } catch (err: any) {
-    console.error(t('errors.password_change_failed_log'), err)
+    console.error(t('errors.password_change_failed_log'), err);
 
     // 详细记录错误信息
     if (err.response) {
       // 显示服务器返回的详细错误信息
-      if (err.response.data && typeof err.response.data === 'object') {
-        if (err.response.data.message) {
-          error.value = typeof err.response.data.message === 'string'
-            ? err.response.data.message
-            : JSON.stringify(err.response.data.message)
-        } else if (err.response.data.detail) {
-          error.value = typeof err.response.data.detail === 'string'
-            ? err.response.data.detail
-            : JSON.stringify(err.response.data.detail)
-        } else {
-          error.value = t('errors.password_change_failed')
+      console.error('服务器响应:', err.response);
+      if (err.response.data && err.response.data.message) {
+        error.value = err.response.data.message;
+      } else if (err.response.data && err.response.data.errors) {
+        // 处理验证错误
+        const errorMessages = [];
+        for (const field in err.response.data.errors) {
+          errorMessages.push(err.response.data.errors[field]);
         }
+        error.value = errorMessages.join(', ');
       } else {
-        error.value = t('errors.password_change_failed')
+        error.value = t('errors.password_change_failed');
       }
-    } else if (err.code === 'ECONNABORTED') {
-      error.value = t('errors.network_timeout')
+    } else if (err.request) {
+      // 请求已发送但没有收到响应
+      console.error('未收到响应:', err.request);
+      error.value = t('errors.no_response_from_server');
     } else {
-      error.value = t('errors.password_change_failed')
+      // 请求设置时出错
+      console.error('请求错误:', err.message);
+      error.value = t('errors.password_change_failed');
     }
+
+
   } finally {
     loading.value = false
   }

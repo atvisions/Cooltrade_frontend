@@ -4,6 +4,7 @@ import HomeView from '../views/HomeView.vue'
 import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
 import ProfileView from '../views/ProfileView.vue'
+import PointsView from '../views/PointsView.vue'
 import ForgotPasswordView from '../views/ForgotPasswordView.vue'
 import ChangePasswordView from '../views/ChangePasswordView.vue'
 
@@ -32,6 +33,12 @@ const router = createRouter({
       path: '/profile',
       name: 'profile',
       component: ProfileView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/points',
+      name: 'points',
+      component: PointsView,
       meta: { requiresAuth: true }
     },
     {

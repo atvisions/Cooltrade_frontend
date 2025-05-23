@@ -1,4 +1,35 @@
 export default {
+  points: {
+    my_points: '내 포인트',
+    total_points: '총 포인트',
+    ranking: '랭킹',
+    earn_points: '포인트 획득',
+    invite_friends: '친구 초대',
+    invite: '초대',
+    points: '포인트',
+    history: '포인트 내역',
+    history_all: '전체',
+    history_earned: '획득',
+    history_used: '사용',
+    no_history: '포인트 내역이 없습니다',
+    invitation_reward_desc: '초대 보상',
+    daily_trade_desc: '일일 거래 보상',
+    used_for_discount: '포인트 할인 사용',
+    your_invitation_code: '내 초대 코드',
+    share: '공유',
+    copy_success: '복사 완료',
+    share_invitation_title: '친구 초대하기',
+    share_invitation_text: '내 초대 코드 {code}로 가입하고 {points} 포인트를 받으세요!',
+    daily_trade: '일일 거래',
+    go_trade: '거래하기',
+    invitation_code: '초대 코드',
+    invitation_records: '초대 내역',
+    no_invitation_records: '초대 내역이 없습니다',
+    total_invited: '{count}명 초대됨',
+    invitation_reward: '친구가 초대 코드로 가입하면 {points}포인트를 획득할 수 있습니다',
+    user: '사용자',
+    registered_at: '가입일'
+  },
   common: {
     app_name: 'Cooltrade',
     loading: '로딩 중...',
@@ -71,6 +102,7 @@ export default {
     email: '이메일',
     created_at: '생성일',
     updated_at: '업데이트일',
+    registration_time: '가입 시간',
     language_preference: '언어 설정',
     generate_invitation: '초대 코드 생성',
     invitation_codes: '초대 코드 목록',
@@ -183,7 +215,8 @@ export default {
   },
   nav: {
     market: '마켓',
-    profile: '프로필'
+    points: '포인트',
+    settings: '설정'
   },
   tokenNotFound: {
     title: '{symbol} 데이터를 찾을 수 없습니다',

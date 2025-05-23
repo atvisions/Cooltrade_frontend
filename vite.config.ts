@@ -21,14 +21,13 @@ export default defineConfig({
     }
   },
   server: {
-    port: 3001,
+    port: 3002,
     open: true,
     proxy: {
       '/api': {
-        target: 'http://192.168.3.16:8000',
+        target: 'https://www.cooltrade.xyz',
         changeOrigin: true,
-        secure: false,
-        ws: true,
+        secure: true,
         rewrite: (path) => path,
         configure: (proxy, _options) => {
           proxy.on('error', (err, _req, _res) => {
@@ -36,22 +35,15 @@ export default defineConfig({
           });
           proxy.on('proxyReq', (proxyReq, req, _res) => {
             console.log('Sending Request to the Target:', req.method, req.url);
-            // 修改请求头
-            proxyReq.setHeader('Origin', 'http://192.168.3.16:8000');
           });
           proxy.on('proxyRes', (proxyRes, req, _res) => {
             console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
-            // 添加 CORS 头
-            proxyRes.headers['Access-Control-Allow-Origin'] = '*';
-            proxyRes.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
-            proxyRes.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept, Authorization';
-            proxyRes.headers['Access-Control-Allow-Credentials'] = 'true';
           });
         }
       }
     }
   },
-  base: './',  // 使用相对路径，确保在扩展环境中也能正确加载资源
+  base: '',  // 使用空字符串，这样生成的路径会是相对于当前目录的
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
@@ -63,19 +55,16 @@ export default defineConfig({
         drop_debugger: true
       }
     },
-    // 确保所有代码都打包到一个文件中
-    cssCodeSplit: false,  // 禁用 CSS 代码分割
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'index.html'),
       },
       output: {
-        // 禁用代码分割，确保所有代码都在一个文件中
-        manualChunks: undefined,
-        entryFileNames: 'assets/main.js',
-        chunkFileNames: 'assets/main.js',
-        // 简化配置，直接使用固定的文件名
-        assetFileNames: 'assets/style.[ext]'
+        // 不单独打包i18n文件，避免加载问题
+        manualChunks: undefined,  // 禁用代码分割
+        entryFileNames: 'assets/[name].js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name].[ext]'
       }
     }
   }

@@ -10,16 +10,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { setLanguage } from '@/i18n'
 
 const { locale } = useI18n()
 const currentLanguage = ref(locale.value)
 
+// 监听全局语言变化
+watch(locale, (newLocale) => {
+  console.log(`[LanguageSwitcher] 检测到语言变化: ${newLocale}`);
+  currentLanguage.value = newLocale;
+});
+
 onMounted(() => {
   // 确保组件挂载时使用正确的语言
-  currentLanguage.value = locale.value
+  currentLanguage.value = locale.value;
+  console.log(`[LanguageSwitcher] 组件挂载，当前语言: ${locale.value}`);
+
+  // 监听全局强制刷新事件
+  window.addEventListener('force-refresh-i18n', () => {
+    console.log(`[LanguageSwitcher] 收到强制刷新事件，当前语言: ${locale.value}`);
+    currentLanguage.value = locale.value;
+  });
 })
 
 const changeLanguage = () => {

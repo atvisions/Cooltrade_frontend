@@ -108,7 +108,7 @@
       <div v-else-if="analysisData" class="max-w-[375px] mx-auto px-4 pb-16">
         <!-- 价格展示卡片 -->
         <div class="mt-6 p-5 rounded-lg bg-gradient-to-b from-gray-800/60 to-gray-900/60 border border-gray-700/50 shadow-lg">
-          <h2 class="text-center text-gray-400 mb-1">{{ $t('analysis.snapshot_price') }}</h2>
+          <h2 class="text-center text-gray-400 mb-1">{{ t('analysis.snapshot_price') }}</h2>
           <div class="text-center text-3xl font-bold mb-2">
             {{ formatPrice(analysisData.snapshot_price) }}
             <span class="text-sm text-gray-400">USD</span>
@@ -121,14 +121,14 @@
               @click="shareToTwitter"
             >
               <i class="ri-twitter-fill"></i>
-              <span class="text-sm">{{ $t('analysis.share_to_twitter') }}</span>
+              <span class="text-sm">{{ t('analysis.share_to_twitter') }}</span>
             </button>
             <button
               class="px-4 py-2 bg-gray-600/20 hover:bg-gray-600/30 text-gray-400 rounded-full transition flex items-center gap-1"
               @click="saveChartImage"
             >
               <i class="ri-image-line"></i>
-              <span class="text-sm">{{ $t('analysis.save_image') }}</span>
+              <span class="text-sm">{{ t('analysis.save_image') }}</span>
             </button>
           </div>
 
@@ -140,7 +140,7 @@
             <div class="text-green-400 text-xl font-bold mb-1">{{ formatPercent(analysisData.trend_analysis.probabilities.up) }}</div>
             <div class="text-xs text-green-300 flex items-center justify-center">
               <i class="ri-arrow-up-line w-4 h-4 flex items-center justify-center"></i>
-              <span>{{ $t('analysis.uptrend') }}</span>
+              <span>{{ t('analysis.uptrend') }}</span>
             </div>
           </div>
 
@@ -148,7 +148,7 @@
             <div class="text-gray-300 text-xl font-bold mb-1">{{ formatPercent(analysisData.trend_analysis.probabilities.sideways) }}</div>
             <div class="text-xs text-gray-400 flex items-center justify-center">
               <i class="ri-subtract-line w-4 h-4 flex items-center justify-center"></i>
-              <span>{{ $t('analysis.sideways') }}</span>
+              <span>{{ t('analysis.sideways') }}</span>
             </div>
           </div>
 
@@ -156,14 +156,14 @@
             <div class="text-red-400 text-xl font-bold mb-1">{{ formatPercent(analysisData.trend_analysis.probabilities.down) }}</div>
             <div class="text-xs text-red-300 flex items-center justify-center">
               <i class="ri-arrow-down-line w-4 h-4 flex items-center justify-center"></i>
-              <span>{{ $t('analysis.downtrend') }}</span>
+              <span>{{ t('analysis.downtrend') }}</span>
             </div>
           </div>
         </div>
 
         <!-- 市场趋势分析 -->
         <div class="mt-6" v-if="analysisData?.trend_analysis?.summary">
-          <h3 class="text-lg font-medium mb-3">{{ $t('analysis.market_trend_analysis') }}</h3>
+          <h3 class="text-lg font-medium mb-3">{{ t('analysis.market_trend_analysis') }}</h3>
           <div class="p-4 rounded-lg bg-gray-800/30 border border-gray-700/50">
             <p class="text-gray-300 leading-relaxed">
               {{ analysisData.trend_analysis.summary }}
@@ -173,7 +173,7 @@
 
         <!-- 技术指标分析 -->
         <div class="mt-6" v-if="analysisData?.indicators_analysis">
-          <h3 class="text-lg font-medium mb-3">{{ $t('analysis.technical_indicators') }}</h3>
+          <h3 class="text-lg font-medium mb-3">{{ t('analysis.technical_indicators') }}</h3>
           <div class="flex flex-col gap-3">
             <!-- 单参数指标 -->
             <div class="grid grid-cols-2 gap-3">
@@ -397,28 +397,28 @@
 
         <!-- 支撑阻力位 -->
         <div class="mt-6" v-if="analysisData?.trading_advice">
-          <h3 class="text-lg font-medium mb-3">{{ $t('analysis.trading_advice') }}</h3>
+          <h3 class="text-lg font-medium mb-3">{{ t('analysis.trading_advice') }}</h3>
           <div class="p-4 rounded-lg bg-gray-800/30 border border-gray-700/50 space-y-3">
             <div class="flex items-center justify-between">
-              <div class="text-sm text-gray-400">{{ $t('analysis.recommended_action') }}</div>
+              <div class="text-sm text-gray-400">{{ t('analysis.recommended_action') }}</div>
               <div class="text-sm" :class="analysisData.trading_advice.action === '买入' ? 'text-green-400' : analysisData.trading_advice.action === '卖出' ? 'text-red-400' : 'text-gray-400'">
                 {{ getLocalizedAction(analysisData.trading_advice.action, currentLanguage) }}
               </div>
             </div>
             <div class="flex items-center justify-between">
-              <div class="text-sm text-gray-400">{{ $t('analysis.entry_price') }}</div>
+              <div class="text-sm text-gray-400">{{ t('analysis.entry_price') }}</div>
               <div class="text-sm">{{ formatPrice(analysisData.trading_advice.entry_price) }}</div>
             </div>
             <div class="flex items-center justify-between">
-              <div class="text-sm text-gray-400">{{ $t('analysis.stop_loss') }}</div>
+              <div class="text-sm text-gray-400">{{ t('analysis.stop_loss') }}</div>
               <div class="text-sm text-red-400">{{ formatPrice(analysisData.trading_advice.stop_loss) }}</div>
             </div>
             <div class="flex items-center justify-between">
-              <div class="text-sm text-gray-400">{{ $t('analysis.take_profit') }}</div>
+              <div class="text-sm text-gray-400">{{ t('analysis.take_profit') }}</div>
               <div class="text-sm text-green-400">{{ formatPrice(analysisData.trading_advice.take_profit) }}</div>
             </div>
             <div class="pt-2 border-t border-gray-700/50">
-              <div class="text-sm text-gray-400 mb-1">{{ $t('analysis.reason') }}</div>
+              <div class="text-sm text-gray-400 mb-1">{{ t('analysis.reason') }}</div>
               <div class="text-sm text-gray-300">{{ analysisData.trading_advice.reason }}</div>
             </div>
           </div>
@@ -426,10 +426,10 @@
 
         <!-- 风险评估 -->
         <div class="mt-6" v-if="analysisData?.risk_assessment">
-          <h3 class="text-lg font-medium mb-3">{{ $t('analysis.risk_assessment') }}</h3>
+          <h3 class="text-lg font-medium mb-3">{{ t('analysis.risk_assessment') }}</h3>
           <div class="p-4 rounded-lg bg-gray-800/30 border border-gray-700/50">
             <div class="flex items-center justify-between mb-3">
-              <div class="text-sm text-gray-400">{{ $t('analysis.risk_level') }}</div>
+              <div class="text-sm text-gray-400">{{ t('analysis.risk_level') }}</div>
               <div class="px-2 py-0.5 rounded"
                 :class="{
                   'bg-red-900/30 text-red-400': analysisData.risk_assessment.level === '高',
@@ -440,7 +440,7 @@
               </div>
             </div>
             <div class="mb-3">
-              <div class="text-sm text-gray-400 mb-1">{{ $t('analysis.risk_score') }}</div>
+              <div class="text-sm text-gray-400 mb-1">{{ t('analysis.risk_score') }}</div>
               <div class="w-full bg-gray-700/50 rounded-full h-2">
                 <div class="h-2 rounded-full"
                   :class="{
@@ -452,7 +452,7 @@
               </div>
             </div>
             <div v-if="analysisData.risk_assessment.details && analysisData.risk_assessment.details.length > 0">
-              <div class="text-sm text-gray-400 mb-1">{{ $t('analysis.risk_factors') }}</div>
+              <div class="text-sm text-gray-400 mb-1">{{ t('analysis.risk_factors') }}</div>
               <ul class="text-sm text-gray-300 list-disc pl-5 space-y-1">
                 <li v-for="(detail, index) in analysisData.risk_assessment.details" :key="index">
                   {{ detail }}
@@ -471,14 +471,18 @@
     <!-- 底部导航栏 -->
     <nav class="absolute bottom-0 left-0 right-0 bg-[#0F172A]/95 backdrop-blur-md border-t border-gray-800">
       <div class="max-w-[375px] mx-auto">
-        <div class="grid grid-cols-2 h-16">
+        <div class="grid grid-cols-3 h-16">
           <router-link to="/" class="flex flex-col items-center justify-center text-primary border-t-2 border-primary">
             <i class="ri-line-chart-line ri-lg w-6 h-6 flex items-center justify-center"></i>
             <span class="text-xs mt-0.5">{{ t('nav.market') }}</span>
           </router-link>
+          <router-link to="/points" class="flex flex-col items-center justify-center text-gray-500">
+            <i class="ri-coin-line ri-lg w-6 h-6 flex items-center justify-center"></i>
+            <span class="text-xs mt-0.5">{{ t('nav.points') }}</span>
+          </router-link>
           <router-link to="/profile" class="flex flex-col items-center justify-center text-gray-500">
-            <i class="ri-user-3-line ri-lg w-6 h-6 flex items-center justify-center"></i>
-            <span class="text-xs mt-0.5">{{ t('nav.profile') }}</span>
+            <i class="ri-settings-3-line ri-lg w-6 h-6 flex items-center justify-center"></i>
+            <span class="text-xs mt-0.5">{{ t('nav.settings') }}</span>
           </router-link>
         </div>
       </div>
@@ -642,10 +646,21 @@ const loadAnalysisData = async (forceRefresh: boolean = false) => {
       symbol = parseSymbolFromUrl(url)
     }
 
+    // 检查是否在交易所页面
+    const isOnExchangePage = isExtensionEnvironment() ? url.includes('trade') || url.includes('exchange') : true;
+
     if (!symbol) {
-      symbol = 'BTC' // 默认使用BTC
-      // 避免不必要的错误提示，移除错误信息
-      error.value = null
+      if (isOnExchangePage) {
+        symbol = 'BTC'; // 在交易所页面但无法识别交易对时，默认使用BTC
+        console.log('无法识别交易对，使用默认交易对: BTC');
+        // 避免不必要的错误提示，移除错误信息
+        error.value = null;
+      } else {
+        // 不在交易所页面，显示默认交易对的数据，但不显示错误
+        symbol = 'BTC';
+        console.log('不在交易所页面，使用默认交易对: BTC');
+        error.value = null;
+      }
     }
 
     currentSymbol.value = symbol
@@ -740,14 +755,40 @@ const loadAnalysisData = async (forceRefresh: boolean = false) => {
 
         // 处理404错误(代币未找到)，这也可能意味着数据库中没有该代币
         if (apiError.response?.status === 404) {
-          console.log('检测到404错误，认为是交易对未找到')
-          isTokenNotFound.value = true
-          error.value = null // 清除错误，显示特殊的未找到视图
-          return
+          console.log('检测到404错误，认为是交易对未找到');
+
+          // 检查是否在交易所页面
+          const isOnExchangePage = isExtensionEnvironment()
+            ? (await chrome.tabs.query({ active: true, currentWindow: true }))[0]?.url?.includes('trade') ||
+              (await chrome.tabs.query({ active: true, currentWindow: true }))[0]?.url?.includes('exchange')
+            : true;
+
+          if (isOnExchangePage) {
+            // 在交易所页面，显示交易对未找到视图
+            isTokenNotFound.value = true;
+            error.value = null; // 清除错误，显示特殊的未找到视图
+          } else {
+            // 不在交易所页面，显示默认交易对的数据，但不显示错误
+            // 尝试获取默认交易对(BTC)的数据
+            try {
+              console.log('不在交易所页面，尝试获取默认交易对(BTC)的数据');
+              const defaultResponse = await getTechnicalAnalysis('BTC');
+              const currentLanguage = localStorage.getItem('language') || 'en-US';
+              analysisData.value = formatTechnicalAnalysisData(defaultResponse, currentLanguage);
+              isTokenNotFound.value = false;
+              error.value = null;
+            } catch (defaultError) {
+              // 如果默认交易对也获取失败，显示交易对未找到视图
+              console.error('获取默认交易对数据失败:', defaultError);
+              isTokenNotFound.value = true;
+              error.value = null;
+            }
+          }
+          return;
         } else {
-          isTokenNotFound.value = false
+          isTokenNotFound.value = false;
           error.value = errorMsg;
-          console.error('设置错误信息:', error.value)
+          console.error('设置错误信息:', error.value);
         }
       }
 
@@ -772,6 +813,7 @@ const loadAnalysisData = async (forceRefresh: boolean = false) => {
 
 // 监听语言变更事件，重新翻译报告数据
 const setupLanguageChangeListener = () => {
+  // 监听语言变更事件
   window.addEventListener('language-changed', async (event) => {
     console.log('语言已变更，重新翻译报告数据')
 
@@ -783,6 +825,27 @@ const setupLanguageChangeListener = () => {
       console.log(`语言已变更为 ${newLanguage}，重新加载 ${currentSymbol.value} 的分析报告`)
       // 重新加载数据，获取新语言的报告
       await loadAnalysisData(false)
+
+      // 强制重新渲染组件
+      await nextTick()
+      console.log('语言变更后强制重新渲染组件完成');
+    }
+  })
+
+  // 监听强制刷新事件
+  window.addEventListener('force-refresh-i18n', async () => {
+    console.log('收到强制刷新i18n事件，重新渲染组件');
+
+    // 如果有分析数据，重新格式化并应用新语言
+    if (analysisData.value && currentSymbol.value) {
+      const currentLanguage = localStorage.getItem('language') || 'en-US';
+      console.log(`强制刷新i18n，当前语言: ${currentLanguage}`);
+
+      // 重新加载数据，获取新语言的报告
+      await loadAnalysisData(false);
+
+      // 强制重新渲染组件
+      await nextTick();
     }
   })
 }
@@ -1064,7 +1127,7 @@ const saveChartImage = async () => {
     titleSection.style.borderRadius = '16px'
     titleSection.style.boxShadow = '0 2px 8px 0 #0002'
     titleSection.innerHTML = `
-      <h2 style="font-size: 22px; margin-bottom: 10px; font-weight: 600; letter-spacing: 1px;">${currentSymbol.value} Market Analysis</h2>
+      <h2 style="font-size: 22px; margin-bottom: 10px; font-weight: 600; letter-spacing: 1px;">${currentSymbol.value} ${t('analysis.market_report', { symbol: getBaseSymbol(currentSymbol.value) }).replace('analysis.market_report', '市场分析报告')}</h2>
       <div style="font-size: 32px; font-weight: bold; margin-bottom: 4px;">
         ${formatPrice(analysisData.value?.current_price)} <span style='font-size:16px;color:#9ca3af'>USD</span>
       </div>
@@ -1081,20 +1144,20 @@ const saveChartImage = async () => {
       trendSection.style.borderRadius = '12px'
       trendSection.style.boxShadow = '0 1px 4px 0 #0001'
       trendSection.innerHTML = `
-        <div style="font-size: 16px; font-weight: 500; margin-bottom: 8px;">Market Trend Analysis</div>
+        <div style="font-size: 16px; font-weight: 500; margin-bottom: 8px;">${t('analysis.market_trend_analysis').replace('analysis.market_trend_analysis', '市场趋势分析')}</div>
         <div style="font-size: 14px; color: #d1d5db; line-height: 1.6; margin-bottom: 12px;">${analysisData.value.trend_analysis.summary}</div>
         <div style="display: flex; justify-content: center; gap: 8px;">
           <div style="flex:1; text-align:center; background:rgba(16,185,129,0.12); border-radius:8px; padding:8px 0; border:1px solid #10b98133;">
             <div style="color:#4ade80; font-size:18px; font-weight:600;">${formatPercent(analysisData.value.trend_analysis.probabilities.up)}</div>
-            <div style="color:#4ade80; font-size:12px;">Up</div>
+            <div style="color:#4ade80; font-size:12px;">${t('analysis.uptrend').replace('analysis.uptrend', '上涨')}</div>
           </div>
           <div style="flex:1; text-align:center; background:rgba(156,163,175,0.12); border-radius:8px; padding:8px 0; border:1px solid #9ca3af33;">
             <div style="color:#9ca3af; font-size:18px; font-weight:600;">${formatPercent(analysisData.value.trend_analysis.probabilities.sideways)}</div>
-            <div style="color:#9ca3af; font-size:12px;">Sideways</div>
+            <div style="color:#9ca3af; font-size:12px;">${t('analysis.sideways').replace('analysis.sideways', '盘整')}</div>
           </div>
           <div style="flex:1; text-align:center; background:rgba(239,68,68,0.12); border-radius:8px; padding:8px 0; border:1px solid #ef444433;">
             <div style="color:#ef4444; font-size:18px; font-weight:600;">${formatPercent(analysisData.value.trend_analysis.probabilities.down)}</div>
-            <div style="color:#ef4444; font-size:12px;">Down</div>
+            <div style="color:#ef4444; font-size:12px;">${t('analysis.downtrend').replace('analysis.downtrend', '下跌')}</div>
           </div>
         </div>
       `
@@ -1111,7 +1174,7 @@ const saveChartImage = async () => {
       indicatorsSection.style.borderRadius = '12px'
       indicatorsSection.style.boxShadow = '0 1px 4px 0 #0001'
       indicatorsSection.innerHTML = `
-        <div style="font-size: 16px; font-weight: 500; margin-bottom: 10px;">Technical Indicators</div>
+        <div style="font-size: 16px; font-weight: 500; margin-bottom: 10px;">${t('analysis.technical_indicators').replace('analysis.technical_indicators', '技术指标')}</div>
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
           ${Object.entries(analysisData.value.indicators_analysis)
             .filter(([key]) => !['MACD', 'BollingerBands', 'DMI'].includes(key))
@@ -1163,11 +1226,11 @@ const saveChartImage = async () => {
       riskSection.style.borderRadius = '12px'
       riskSection.style.boxShadow = '0 1px 4px 0 #0001'
       riskSection.innerHTML = `
-        <div style="font-size: 16px; font-weight: 500; margin-bottom: 10px;">Risk Assessment</div>
+        <div style="font-size: 16px; font-weight: 500; margin-bottom: 10px;">${t('analysis.risk_assessment').replace('analysis.risk_assessment', '风险评估')}</div>
         <div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px;">
-          <div><span style='color:#9ca3af'>Level:</span> <span style='font-weight:500;'>${risk.level}</span></div>
-          <div><span style='color:#9ca3af'>Score:</span> ${risk.score}/100</div>
-          ${risk.details && risk.details.length > 0 ? `<div><span style='color:#9ca3af'>Factors:</span><ul style='margin:0 0 0 18px;padding:0;color:#d1d5db;'>${risk.details.map((d:any) => `<li>${d}</li>`).join('')}</ul></div>` : ''}
+          <div><span style='color:#9ca3af'>${t('analysis.risk_level').replace('analysis.risk_level', '风险等级')}:</span> <span style='font-weight:500;'>${risk.level}</span></div>
+          <div><span style='color:#9ca3af'>${t('analysis.risk_score').replace('analysis.risk_score', '风险分数')}:</span> ${risk.score}/100</div>
+          ${risk.details && risk.details.length > 0 ? `<div><span style='color:#9ca3af'>${t('analysis.risk_factors').replace('analysis.risk_factors', '风险因素')}:</span><ul style='margin:0 0 0 18px;padding:0;color:#d1d5db;'>${risk.details.map((d:any) => `<li>${d}</li>`).join('')}</ul></div>` : ''}
         </div>
       `
       container.appendChild(riskSection)
@@ -1300,7 +1363,31 @@ const getLocalizedRiskLevel = (level: RiskLevelType, lang: LangType): string => 
 
 const currentLanguage: LangType = (localStorage.getItem('language') as LangType) || 'zh-CN';
 
-const getIndicatorExplanation = (key: string) => i18nT(`indicatorExplanations.${key}`)
+const getIndicatorExplanation = (key: string) => {
+  // 使用增强的翻译函数
+  const result = t(`indicatorExplanations.${key}`)
+
+  // 如果返回的是键名，说明翻译失败，尝试提供默认值
+  if (result === `indicatorExplanations.${key}`) {
+    // 提供默认的中文说明
+    const defaultExplanations: Record<string, string> = {
+      RSI: '相对强弱指数（RSI），用于衡量价格动量和超买超卖状态。',
+      BIAS: '乖离率，衡量价格偏离均线的程度。',
+      PSY: '心理线指标，反映市场参与者的心理变化。',
+      VWAP: '成交量加权平均价，反映市场真实交易价值。',
+      FundingRate: '资金费率，反映合约市场多空力量对比。',
+      ExchangeNetflow: '交易所净流入，反映资金流向。',
+      NUPL: '未实现净盈亏比率，反映市场整体盈亏状况。',
+      MayerMultiple: '梅耶倍数，当前价格与200日均线的比值。',
+      MACD: '移动平均线收敛散度，用于判断趋势强弱和转折点。',
+      BollingerBands: '布林带，用于衡量价格波动性和支撑阻力位。',
+      DMI: '动向指标，用于判断趋势方向和强度。'
+    }
+    return defaultExplanations[key] || key
+  }
+
+  return result
+}
 
 </script>
 
