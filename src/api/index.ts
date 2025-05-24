@@ -54,16 +54,29 @@ const validateToken = () => {
   }
 
   // 检查token格式
-  if (!token.startsWith('Token ')) {
-    console.error('Token格式错误')
-    return false
+  if (!token.startsWith('Token ') && !token.startsWith('Bearer ')) {
+    console.log('Token格式不正确，尝试修复格式')
+
+    // 尝试修复token格式
+    try {
+      // 保存正确格式的token
+      localStorage.setItem('token', `Token ${token}`)
+      console.log('Token格式已修复')
+      return true
+    } catch (e) {
+      console.error('修复Token格式失败:', e)
+      return false
+    }
   }
 
-  // 检查token长度
-  const tokenValue = token.replace('Token ', '')
-  if (tokenValue.length !== 40) {
-    console.error('Token长度错误')
-    return false
+  // 检查token长度 (只对Token格式的令牌进行检查)
+  if (token.startsWith('Token ')) {
+    const tokenValue = token.replace('Token ', '')
+    // 放宽token长度检查，只确保不为空
+    if (tokenValue.length < 5) {
+      console.error('Token长度异常')
+      return false
+    }
   }
 
   return true
@@ -125,7 +138,14 @@ const retryRequest = async (config: any, retryCount: number = 0): Promise<any> =
 
     const token = localStorage.getItem('token')
     if (token) {
-      config.headers.Authorization = token
+      // 确保令牌格式正确
+      if (!token.startsWith('Token ') && !token.startsWith('Bearer ')) {
+        console.log('重试请求 - Token格式不正确，添加前缀')
+        config.headers.Authorization = `Token ${token}`
+      } else {
+        config.headers.Authorization = token
+      }
+      console.log('重试请求 - 使用认证令牌:', config.headers.Authorization)
     }
 
     // 添加缓存控制头
@@ -239,8 +259,22 @@ api.interceptors.request.use(
       if (!isAuthRequest(config.url)) {
         const token = localStorage.getItem('token')
         if (token) {
-          config.headers.Authorization = token
-          console.log('已添加Token到请求头');
+          // 确保令牌格式正确
+          if (!token.startsWith('Token ') && !token.startsWith('Bearer ')) {
+            console.log('请求拦截器 - Token格式不正确，添加前缀')
+            config.headers.Authorization = `Token ${token}`
+
+            // 同时更新localStorage中的token
+            try {
+              localStorage.setItem('token', `Token ${token}`)
+              console.log('请求拦截器 - Token格式已修复并保存到localStorage')
+            } catch (e) {
+              console.error('请求拦截器 - 修复Token格式失败:', e)
+            }
+          } else {
+            config.headers.Authorization = token
+          }
+          console.log('请求拦截器 - 已添加Token到请求头:', config.headers.Authorization);
         }
       }
 
@@ -682,11 +716,18 @@ export const getTechnicalAnalysis = async (
     const url = `${getBaseUrl()}${path}`;
 
     // 发送请求
+    // 获取认证令牌并确保格式正确
+    const token = localStorage.getItem('token');
+    console.log('获取技术分析数据使用的令牌:', token);
+
+    // 确保令牌格式正确
+    const authHeader = token ? (token.startsWith('Token ') ? token : `Token ${token}`) : '';
+
     const response = await axios.get(url, {
       params,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': localStorage.getItem('token') || ''
+        'Authorization': authHeader
       }
     })
     // 检查响应格式
@@ -771,11 +812,18 @@ export const getLatestTechnicalAnalysis = async (
     const url = `${getBaseUrl()}${requestPath}`;
 
     // 发送请求
+    // 获取认证令牌并确保格式正确
+    const token = localStorage.getItem('token');
+    console.log('获取最新技术分析报告使用的令牌:', token);
+
+    // 确保令牌格式正确
+    const authHeader = token ? (token.startsWith('Token ') ? token : `Token ${token}`) : '';
+
     const response = await axios.get(url, {
       params,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': localStorage.getItem('token') || '',
+        'Authorization': authHeader,
         'Cache-Control': 'no-cache',
         'Pragma': 'no-cache'
       }

@@ -128,7 +128,16 @@ export default {
     force_refresh: 'Force Refresh',
     minute_ago: '{n} min ago',
     hour_ago: '{n} hours ago',
-    day_ago: '{n} days ago'
+    day_ago: '{n} days ago',
+    preparing_analysis_report: 'Preparing analysis report...',
+    generating_new_report: 'Generating new analysis report, please wait...',
+    timeout_error: 'Request timeout. Server is processing, please try again later.'
+  },
+  tokenNotFound: {
+    title: '{symbol} Data Not Found',
+    description: 'This token is not yet in our database. Click the button below to get the latest data.',
+    refreshButton: 'Get Latest Market Data',
+    not_supported: 'This token is not supported yet, please try other tokens'
   },
   indicators: {
     rsi: 'RSI',

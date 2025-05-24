@@ -82,7 +82,7 @@
                       v-for="lang in languages"
                       :key="lang.code"
                       @click="selectLanguage(lang.code)"
-                      class="w-full py-3 px-4 rounded-lg flex items-center justify-between"
+                      class="w-full py-3 px-4 rounded-lg flex items-center justify-between transition-colors duration-200"
                       :class="currentLanguage === lang.code ? 'bg-primary/20 text-primary' : 'bg-gray-800 text-white hover:bg-gray-700'"
                     >
                       <div class="flex items-center">
@@ -93,14 +93,7 @@
                     </button>
                   </div>
                 </div>
-                <div class="p-4 border-t border-gray-800 flex justify-end">
-                  <button
-                    @click="showLanguageModal = false"
-                    class="py-2 px-4 bg-primary text-white rounded-lg"
-                  >
-                    <span v-text="t('common.confirm')"></span>
-                  </button>
-                </div>
+                <!-- 移除确认按钮，用户点击语言选项后直接关闭模态框 -->
               </div>
             </div>
 

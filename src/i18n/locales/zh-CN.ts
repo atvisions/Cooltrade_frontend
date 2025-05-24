@@ -128,7 +128,10 @@ export default {
     force_refresh: '强制刷新',
     minute_ago: '{n}分钟前',
     hour_ago: '{n}小时前',
-    day_ago: '{n}天前'
+    day_ago: '{n}天前',
+    preparing_analysis_report: '正在准备分析报告...',
+    generating_new_report: '正在生成新的分析报告，请耐心等待...',
+    timeout_error: '请求超时，服务器正在处理中，请稍后重试'
   },
   indicators: {
     rsi: 'RSI',
@@ -222,7 +225,8 @@ export default {
     title: '{symbol} 数据未找到',
     description: '该代币尚未在我们的数据库中，点击下方按钮获取最新数据',
     loading: '正在获取最新市场数据...',
-    refreshButton: '获取最新市场数据'
+    refreshButton: '获取最新市场数据',
+    not_supported: '该代币暂不支持，请尝试其他代币'
   },
   indicatorExplanations: {
     RSI: '相对强弱指数（RSI），用于衡量价格动量和超买超卖状态。',

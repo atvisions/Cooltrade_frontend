@@ -203,14 +203,56 @@ async function handleApiProxyRequest(data, sendResponse) {
 
     // 确保认证令牌被正确传递
     if (headers && headers.Authorization) {
-      console.log('Background script 请求包含认证令牌');
+      console.log('Background script 请求包含认证令牌:', headers.Authorization);
+
+      // 确保令牌格式正确，如果不是以 "Token " 开头，则添加前缀
+      if (headers.Authorization && !headers.Authorization.startsWith('Token ') && !headers.Authorization.startsWith('Bearer ')) {
+        console.log('Background script 修正认证令牌格式，添加 Token 前缀');
+        options.headers.Authorization = `Token ${headers.Authorization}`;
+      }
     } else {
-      // 如果请求中没有包含认证令牌，尝试使用环境配置中的 token
-      if (envConfig.token) {
-        console.log('Background script 使用环境配置中的认证令牌');
-        options.headers.Authorization = envConfig.token;
-      } else {
-        console.warn('Background script 请求不包含认证令牌，环境配置中也没有 token');
+      // 如果请求中没有包含认证令牌，尝试从 localStorage 获取
+      try {
+        // 从 localStorage 获取 token
+        chrome.storage.local.get(['token'], function(result) {
+          if (result.token) {
+            console.log('Background script 从 storage 获取认证令牌');
+
+            // 确保令牌格式正确
+            if (!result.token.startsWith('Token ') && !result.token.startsWith('Bearer ')) {
+              options.headers.Authorization = `Token ${result.token}`;
+            } else {
+              options.headers.Authorization = result.token;
+            }
+          } else if (envConfig.token) {
+            console.log('Background script 使用环境配置中的认证令牌');
+
+            // 确保令牌格式正确
+            if (!envConfig.token.startsWith('Token ') && !envConfig.token.startsWith('Bearer ')) {
+              options.headers.Authorization = `Token ${envConfig.token}`;
+            } else {
+              options.headers.Authorization = envConfig.token;
+            }
+          } else {
+            console.warn('Background script 请求不包含认证令牌，无法从任何来源获取 token');
+          }
+        });
+      } catch (error) {
+        console.error('Background script 获取认证令牌失败:', error);
+
+        // 如果从 localStorage 获取失败，尝试使用环境配置中的 token
+        if (envConfig.token) {
+          console.log('Background script 使用环境配置中的认证令牌');
+
+          // 确保令牌格式正确
+          if (!envConfig.token.startsWith('Token ') && !envConfig.token.startsWith('Bearer ')) {
+            options.headers.Authorization = `Token ${envConfig.token}`;
+          } else {
+            options.headers.Authorization = envConfig.token;
+          }
+        } else {
+          console.warn('Background script 请求不包含认证令牌，环境配置中也没有 token');
+        }
       }
     }
 
