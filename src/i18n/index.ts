@@ -7,11 +7,6 @@ import jaJP from './locales/ja-JP'
 import koKR from './locales/ko-KR'
 
 // 确保语言文件被正确加载
-console.log('Loading language files...');
-console.log('zh-CN loaded:', !!zhCN);
-console.log('en-US loaded:', !!enUS);
-console.log('ja-JP loaded:', !!jaJP);
-console.log('ko-KR loaded:', !!koKR);
 
 // 获取浏览器语言
 const getBrowserLanguage = (): string => {
@@ -65,11 +60,9 @@ export const setLanguage = (lang: string) => {
   if (['zh-CN', 'en-US', 'ja-JP', 'ko-KR'].includes(lang)) {
     // 记录旧语言，用于调试
     const oldLang = localStorage.getItem('language') || 'en-US';
-    console.log(`[i18n] 设置语言: ${lang}，旧语言: ${oldLang}`);
 
     // 如果语言没有变化，不执行后续操作
     if (oldLang === lang) {
-      console.log(`[i18n] 语言未变化，保持为: ${lang}`);
       return;
     }
 
@@ -84,23 +77,11 @@ export const setLanguage = (lang: string) => {
       // 导入直接加载器
       import('./direct-loader').then(directLoader => {
         directLoader.setLocale(lang);
-        console.log(`[i18n] 直接加载器语言已设置为: ${lang}`);
       });
     } catch (e) {
-      console.error('[i18n] 设置直接加载器语言失败:', e);
     }
 
-    // 更新调试工具中的当前语言
-    try {
-      import('../i18n-debug').then(debugModule => {
-        const debug = debugModule.initI18nDebug();
-        if (debug && 'updateCurrentLocale' in debug) {
-          (debug as any).updateCurrentLocale(lang);
-        }
-      });
-    } catch (e) {
-      console.error('[i18n] 更新调试工具语言失败:', e);
-    }
+    // 移除调试工具相关代码
 
     // 如果用户已登录，更新用户的语言偏好
     const token = localStorage.getItem('token');
@@ -116,10 +97,8 @@ export const setLanguage = (lang: string) => {
     setTimeout(() => {
       // 触发一个全局事件，通知所有组件重新渲染
       window.dispatchEvent(new Event('force-refresh-i18n'));
-      console.log(`[i18n] 已触发强制刷新事件，语言: ${lang}`);
     }, 100); // 增加延迟，确保语言设置已完成
   } else {
-    console.error(`[i18n] 不支持的语言: ${lang}`);
   }
 }
 
@@ -133,7 +112,6 @@ const updateUserLanguagePreference = async (lang: string) => {
     const isExtension = window.location.protocol === 'chrome-extension:';
 
     if (isExtension) {
-      console.log('[i18n] 在扩展环境中，跳过 API 请求，只更新本地存储');
 
       // 在扩展环境中，只更新本地存储
       try {
@@ -142,10 +120,8 @@ const updateUserLanguagePreference = async (lang: string) => {
           const userInfo = JSON.parse(userInfoStr)
           userInfo.language = lang
           localStorage.setItem('userInfo', JSON.stringify(userInfo))
-          console.log('[i18n] 本地用户信息已更新，语言:', lang)
         }
       } catch (e) {
-        console.error('[i18n] 更新本地用户信息失败:', e)
       }
 
       return;
@@ -166,9 +142,7 @@ const updateUserLanguagePreference = async (lang: string) => {
     })
 
     if (!response.ok) {
-      console.error('更新用户语言偏好失败')
     } else {
-      console.log('用户语言偏好已更新为:', lang)
 
       // 更新本地用户信息
       try {
@@ -179,11 +153,9 @@ const updateUserLanguagePreference = async (lang: string) => {
           localStorage.setItem('userInfo', JSON.stringify(userInfo))
         }
       } catch (e) {
-        console.error('更新本地用户信息失败:', e)
       }
     }
   } catch (error) {
-    console.error('更新用户语言偏好时出错:', error)
   }
 }
 

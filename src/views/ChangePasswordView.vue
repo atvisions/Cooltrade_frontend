@@ -89,7 +89,6 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
-import { auth } from '@/api'
 import { useEnhancedI18n } from '@/utils/i18n-helper'
 
 const { t } = useEnhancedI18n()
@@ -139,13 +138,11 @@ const handleChangePassword = async () => {
 
   loading.value = true
   try {
-    console.log('发送修改密码请求');
 
     // 使用 axios 直接发送请求，避免使用 api 实例
     const baseUrl = process.env.NODE_ENV === 'development' ? '/api' : 'https://www.cooltrade.xyz/api';
     const url = `${baseUrl}/auth/change-password/`;
 
-    console.log('修改密码请求URL:', url);
 
     // 获取认证令牌
     const token = localStorage.getItem('token');
@@ -166,7 +163,6 @@ const handleChangePassword = async () => {
       }
     });
 
-    console.log('修改密码响应:', response);
 
     if (response.data && response.data.status === 'success') {
       success.value = t('auth.password_changed_success');
@@ -191,12 +187,10 @@ const handleChangePassword = async () => {
       error.value = response.data?.message || t('errors.password_change_failed');
     }
   } catch (err: any) {
-    console.error(t('errors.password_change_failed_log'), err);
 
     // 详细记录错误信息
     if (err.response) {
       // 显示服务器返回的详细错误信息
-      console.error('服务器响应:', err.response);
       if (err.response.data && err.response.data.message) {
         error.value = err.response.data.message;
       } else if (err.response.data && err.response.data.errors) {
@@ -211,11 +205,9 @@ const handleChangePassword = async () => {
       }
     } else if (err.request) {
       // 请求已发送但没有收到响应
-      console.error('未收到响应:', err.request);
       error.value = t('errors.no_response_from_server');
     } else {
       // 请求设置时出错
-      console.error('请求错误:', err.message);
       error.value = t('errors.password_change_failed');
     }
 

@@ -8,11 +8,9 @@ let envConfig = {
 // 监听来自content script的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'RELOAD_RESOURCES') {
-    console.log('收到重新加载资源的请求')
     // 重新加载扩展资源
     chrome.runtime.reload()
   } else if (message.type === 'TRADING_PAGE_LOADED') {
-    console.log('交易页面已加载:', message.data)
     handleTradingPage(message.data, sender.tab.id)
     sendResponse({ status: 'success' })
   } else if (message.type === 'GET_RESOURCE_URL') {
@@ -20,13 +18,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const url = chrome.runtime.getURL(message.data.resource)
       sendResponse({ status: 'success', url })
     } catch (error) {
-      console.error('获取资源URL失败:', error)
       sendResponse({ status: 'error', error: error.message })
     }
   } else if (message.type === 'SET_ENV_CONFIG') {
     // 设置环境配置
     envConfig = { ...envConfig, ...message.data };
-    console.log('Background script 环境配置已更新:', envConfig);
     sendResponse({ status: 'success' });
   } else if (message.type === 'PROXY_API_REQUEST') {
     // 处理API代理请求
@@ -44,12 +40,26 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const { url, name } = message.data
     chrome.cookies.remove({ url: url, name: name }, (details) => {
       if (details) {
-        console.log(`Cookie ${name} from ${url} removed successfully.`, details)
+        // console.log(`Cookie ${name} from ${url} removed successfully.`, details)
       } else {
-        console.log(`Could not remove cookie ${name} from ${url}.`)
+        // console.log(`Could not remove cookie ${name} from ${url}.`)
       }
     })
     return false // 不需要异步响应
+  } else if (message.type === 'PROCESS_TRADE_PAGE') {
+    // ... existing code ...
+  } else if (message.type === 'SEND_UPDATE_MESSAGE') {
+    // ... existing code ...
+  } else if (message.type === 'PROCESS_TRADE_PAGE_ERROR') {
+    // ... existing code ...
+  } else if (message.type === 'EXTENSION_INSTALLED') {
+    // ... existing code ...
+  } else if (message.type === 'EXTENSION_UPDATED') {
+    // ... existing code ...
+  } else if (message.type === 'API_PROXY_REQUEST') {
+    // ... existing code ...
+  } else if (message.type === 'SEND_MESSAGE_ERROR') {
+    // ... existing code ...
   }
   return true
 })
@@ -84,7 +94,7 @@ function checkRateLimit(tabId) {
 async function handleTradingPage(data, tabId) {
   try {
     const { symbol } = data
-    console.log(`处理交易页面: ${symbol}`)
+    // console.log(`处理交易页面: ${symbol}`)
 
     // 检查请求限制
     checkRateLimit(tabId);
@@ -96,20 +106,20 @@ async function handleTradingPage(data, tabId) {
         data: { symbol }
       }, (response) => {
         if (chrome.runtime.lastError) {
-          console.log('发送更新消息时出错:', chrome.runtime.lastError.message);
+          // console.log('发送更新消息时出错:', chrome.runtime.lastError.message);
           return;
         }
 
         if (response) {
-          console.log('更新消息已接收:', response);
+          // console.log('更新消息已接收:', response);
         }
       });
     } catch (error) {
-      console.error('发送更新消息失败:', error);
+      // console.error('发送更新消息失败:', error);
     }
 
   } catch (error) {
-    console.error('处理交易页面失败:', error)
+    // console.error('处理交易页面失败:', error)
     // 如果是请求限制错误，通知前端
     if (error.message.includes('请求过于频繁')) {
       chrome.tabs.sendMessage(tabId, {
@@ -151,10 +161,10 @@ function isSupportedExchange(url) {
 // 监听扩展安装或更新
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
-    console.log('扩展已安装')
+    // console.log('扩展已安装')
     // 不再设置 CSP 规则
   } else if (details.reason === 'update') {
-    console.log('扩展已更新')
+    // console.log('扩展已更新')
     // 清理旧的缓存
     chrome.storage.local.clear()
   }
@@ -164,12 +174,12 @@ chrome.runtime.onInstalled.addListener((details) => {
 async function handleApiProxyRequest(data, sendResponse) {
   try {
     const { url, method, headers, body } = data;
-    console.log('Background script收到API代理请求:', {
-      url: url,
-      method: method,
-      headers: headers ? { ...headers, Authorization: headers.Authorization ? '已设置' : '未设置' } : '未设置',
-      body: body ? '已设置' : '未设置'
-    });
+    // console.log('Background script收到API代理请求:', {
+    //   url: url,
+    //   method: method,
+    //   headers: headers ? { ...headers, Authorization: headers.Authorization ? '已设置' : '未设置' } : '未设置',
+    //   body: body ? '已设置' : '未设置'
+    // });
 
     // 检查是否是强制刷新请求
     const isForceRefresh = url.includes('force_refresh=true');
@@ -180,7 +190,7 @@ async function handleApiProxyRequest(data, sendResponse) {
     // 使用环境配置中的 baseApiUrl
     const baseApiUrl = envConfig.baseApiUrl || 'https://www.cooltrade.xyz/api';
 
-    console.log('Background script使用基础API URL:', baseApiUrl);
+    // console.log('Background script使用基础API URL:', baseApiUrl);
 
     // 如果是相对路径，添加基础URL
     if (url.startsWith('/')) {
@@ -189,7 +199,7 @@ async function handleApiProxyRequest(data, sendResponse) {
       fullUrl = baseApiUrl + '/' + url;
     }
 
-    console.log('Background script使用完整URL:', fullUrl);
+    // console.log('Background script使用完整URL:', fullUrl);
 
     // 构建请求选项
     const options = {
@@ -203,11 +213,11 @@ async function handleApiProxyRequest(data, sendResponse) {
 
     // 确保认证令牌被正确传递
     if (headers && headers.Authorization) {
-      console.log('Background script 请求包含认证令牌:', headers.Authorization);
+      // console.log('Background script 请求包含认证令牌:', headers.Authorization);
 
       // 确保令牌格式正确，如果不是以 "Token " 开头，则添加前缀
       if (headers.Authorization && !headers.Authorization.startsWith('Token ') && !headers.Authorization.startsWith('Bearer ')) {
-        console.log('Background script 修正认证令牌格式，添加 Token 前缀');
+        // console.log('Background script 修正认证令牌格式，添加 Token 前缀');
         options.headers.Authorization = `Token ${headers.Authorization}`;
       }
     } else {
@@ -216,7 +226,7 @@ async function handleApiProxyRequest(data, sendResponse) {
         // 从 localStorage 获取 token
         chrome.storage.local.get(['token'], function(result) {
           if (result.token) {
-            console.log('Background script 从 storage 获取认证令牌');
+            // console.log('Background script 从 storage 获取认证令牌');
 
             // 确保令牌格式正确
             if (!result.token.startsWith('Token ') && !result.token.startsWith('Bearer ')) {
@@ -225,7 +235,7 @@ async function handleApiProxyRequest(data, sendResponse) {
               options.headers.Authorization = result.token;
             }
           } else if (envConfig.token) {
-            console.log('Background script 使用环境配置中的认证令牌');
+            // console.log('Background script 使用环境配置中的认证令牌');
 
             // 确保令牌格式正确
             if (!envConfig.token.startsWith('Token ') && !envConfig.token.startsWith('Bearer ')) {
@@ -234,15 +244,15 @@ async function handleApiProxyRequest(data, sendResponse) {
               options.headers.Authorization = envConfig.token;
             }
           } else {
-            console.warn('Background script 请求不包含认证令牌，无法从任何来源获取 token');
+            // console.warn('Background script 请求不包含认证令牌，无法从任何来源获取 token');
           }
         });
       } catch (error) {
-        console.error('Background script 获取认证令牌失败:', error);
+        // console.error('Background script 获取认证令牌失败:', error);
 
         // 如果从 localStorage 获取失败，尝试使用环境配置中的 token
         if (envConfig.token) {
-          console.log('Background script 使用环境配置中的认证令牌');
+          // console.log('Background script 使用环境配置中的认证令牌');
 
           // 确保令牌格式正确
           if (!envConfig.token.startsWith('Token ') && !envConfig.token.startsWith('Bearer ')) {
@@ -251,7 +261,7 @@ async function handleApiProxyRequest(data, sendResponse) {
             options.headers.Authorization = envConfig.token;
           }
         } else {
-          console.warn('Background script 请求不包含认证令牌，环境配置中也没有 token');
+          // console.warn('Background script 请求不包含认证令牌，环境配置中也没有 token');
         }
       }
     }
@@ -264,14 +274,14 @@ async function handleApiProxyRequest(data, sendResponse) {
     // 设置超时
     const timeout = isForceRefresh ? 120000 : 30000; // 强制刷新使用更长的超时时间
 
-    console.log('Background script发送请求:', {
-      url: fullUrl,
-      options: {
-        method: options.method,
-        headers: options.headers ? { ...options.headers, Authorization: options.headers.Authorization ? '已设置' : '未设置' } : '未设置',
-        body: options.body ? '已设置' : '未设置'
-      }
-    });
+    // console.log('Background script发送请求:', {
+    //   url: fullUrl,
+    //   options: {
+    //     method: options.method,
+    //     headers: options.headers ? { ...options.headers, Authorization: options.headers.Authorization ? '已设置' : '未设置' } : '未设置',
+    //     body: options.body ? '已设置' : '未设置'
+    //   }
+    // });
 
     // 创建超时Promise
     const timeoutPromise = new Promise((_, reject) => {
@@ -281,18 +291,18 @@ async function handleApiProxyRequest(data, sendResponse) {
     // 创建fetch Promise
     // 使用构建的完整URL
     const fetchPromise = fetch(fullUrl, options).catch(error => {
-      console.error('Fetch error:', error);
+      // console.error('Fetch error:', error);
       throw new Error(`Fetch failed: ${error.message}`);
     });
 
     // 使用Promise.race竞争，谁先完成就用谁的结果
     const response = await Promise.race([fetchPromise, timeoutPromise]);
 
-    console.log('Background script收到响应:', {
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers
-    });
+    // console.log('Background script收到响应:', {
+    //   status: response.status,
+    //   statusText: response.statusText,
+    //   headers: response.headers
+    // });
 
     // 获取响应头
     const responseHeaders = {};
@@ -302,17 +312,17 @@ async function handleApiProxyRequest(data, sendResponse) {
 
     // 获取响应体在发送响应回去之前，先记录一下原始的响应文本
     const responseText = await response.text();
-    console.log('Background script原始响应文本:', responseText);
+    // console.log('Background script原始响应文本:', responseText);
 
     let responseData;
     try {
       responseData = JSON.parse(responseText);
     } catch (e) {
-      console.warn('Background script响应不是JSON格式:', responseText);
+      // console.warn('Background script响应不是JSON格式:', responseText);
       responseData = responseText;
     }
 
-    console.log('Background script处理后的响应数据:', responseData);
+    // console.log('Background script处理后的响应数据:', responseData);
 
     // 发送响应回去
     sendResponse({
@@ -323,7 +333,7 @@ async function handleApiProxyRequest(data, sendResponse) {
       success: response.ok
     });
   } catch (error) {
-    console.error('Background script API代理请求失败:', error);
+    // console.error('Background script API代理请求失败:', error);
     sendResponse({
       success: false,
       error: error.message || '请求失败',
@@ -347,7 +357,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         }
       });
     } catch (error) {
-      console.error('发送消息失败:', error);
+      // console.error('发送消息失败:', error);
     }
   }
 })

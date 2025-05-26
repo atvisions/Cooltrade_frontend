@@ -192,14 +192,12 @@ const getMainWebsiteDomain = () => {
 const attemptClaimFromCookie = async () => {
     // 检查是否在 Chrome 扩展环境中运行
     if (typeof chrome === 'undefined' || !chrome.runtime) {
-        console.log('不在 Chrome 扩展环境中运行，跳过 cookie 读取');
         return;
     }
 
     try {
         // 获取当前环境的主网站域名
         const mainWebsiteDomain = getMainWebsiteDomain();
-        console.log('尝试从 cookie 读取临时邀请码，域名:', mainWebsiteDomain);
 
         // 通过消息发送请求给 background script 读取 cookie
         chrome.runtime.sendMessage({
@@ -210,7 +208,6 @@ const attemptClaimFromCookie = async () => {
             }
         }, (response) => {
             if (response && response.cookie) {
-                console.log('从 cookie 读取到临时邀请码 UUID:', response.cookie.value);
                 // 如果读取到 UUID，调用认领函数
                 claimTemporaryInvitation(response.cookie.value);
                 // 读取成功后删除 cookie，避免重复尝试认领
@@ -222,11 +219,9 @@ const attemptClaimFromCookie = async () => {
                     }
                 });
             } else {
-                console.log('未在 cookie 中找到临时邀请码 UUID');
             }
         });
     } catch (error) {
-        console.error('读取 cookie 时发生错误:', error);
     }
 };
 
@@ -234,33 +229,27 @@ const attemptClaimFromCookie = async () => {
 const claimTemporaryInvitation = async (uuid: string) => {
     try {
         if (!uuid) {
-            console.warn('临时邀请码 UUID 为空，跳过认领');
             return;
         }
 
         const token = localStorage.getItem('token') || '';
         if (!token) {
-            console.warn('未找到认证 token，无法认领临时邀请码');
             return;
         }
 
         // 使用 api 实例发送请求，而不是直接使用 axios
         // 这样可以利用 api 实例中的代理机制和环境配置
-        console.log('尝试认领临时邀请码:', uuid);
         const response = await api.post('/auth/claim-temporary-invitation/', {
             temporary_invitation_uuid: uuid
         });
 
         if (response.status === 'success') {
-            console.log('认领临时邀请码成功:', response.message);
             if (response.message === '成功认领邀请并获得奖励') {
                 fetchPointsInfo();
             }
         } else {
-            console.warn('认领临时邀请码失败:', response.message || '未知错误');
         }
     } catch (error) {
-        console.error('认领临时邀请码请求出错:', error);
         // 检查是否在 Chrome 扩展环境中运行
         if (typeof chrome !== 'undefined' && chrome.runtime) {
             // 请求出错也考虑让 background script 删除 cookie，避免无效尝试
@@ -279,12 +268,10 @@ const claimTemporaryInvitation = async (uuid: string) => {
 // 获取积分信息
 const fetchPointsInfo = async () => {
   try {
-    console.log('Fetching invitation info...');
 
     // 检查认证令牌
     const token = localStorage.getItem('token');
     if (!token) {
-      console.error('未找到认证令牌，无法获取积分信息');
       return;
     }
 
@@ -294,14 +281,11 @@ const fetchPointsInfo = async () => {
       'Authorization': token
     };
 
-    console.log('使用认证令牌:', token);
 
-    console.log('发送积分信息请求，包含认证令牌');
 
     try {
       // 使用 fetch 直接发送请求，避免使用 api 实例
       const url = `${window.location.protocol.includes('extension') ? 'https://www.cooltrade.xyz/api' : '/api'}/auth/invitation-info/`;
-      console.log('积分信息请求URL:', url);
 
       const response = await fetch(url, {
         method: 'GET',
@@ -309,40 +293,32 @@ const fetchPointsInfo = async () => {
       });
 
       if (!response.ok) {
-        console.error('获取积分信息失败: HTTP 状态码', response.status);
         return;
       }
 
       const responseData = await response.json();
-      console.log('积分信息响应:', responseData);
 
       // 检查响应格式
       if (responseData && typeof responseData === 'object') {
         if (responseData.status === 'success' && responseData.data) {
           pointsInfo.value = responseData.data;
-          console.log('成功获取积分信息:', responseData.data);
 
           // 如果排名数据合并到 invitation-info 接口，在这里更新 pointsRanking
           if (responseData.data.ranking !== undefined) {
             pointsRanking.value = responseData.data.ranking;
           }
         } else {
-          console.error('获取积分信息失败: 响应格式不正确', responseData);
         }
       } else {
-        console.error('获取积分信息失败: 响应不是对象', responseData);
       }
     } catch (error) {
-      console.error('获取积分信息请求出错:', error);
     }
 
     // 获取排名信息 (如果排名接口是独立的)
     try {
-      console.log('发送排名信息请求');
 
       // 使用 axios 直接发送请求，避免使用 api 实例
       const url = `${window.location.protocol.includes('extension') ? 'https://www.cooltrade.xyz/api' : '/api'}/auth/invitation-info/ranking/`;
-      console.log('排名信息请求URL:', url);
 
       const rankingResponse = await fetch(url, {
         method: 'GET',
@@ -350,30 +326,23 @@ const fetchPointsInfo = async () => {
       });
 
       if (!rankingResponse.ok) {
-        console.warn('获取排名信息失败: HTTP 状态码', rankingResponse.status);
         return;
       }
 
       const rankingData = await rankingResponse.json();
-      console.log('排名信息响应:', rankingData);
 
       // 检查响应格式
       if (rankingData && typeof rankingData === 'object') {
         if (rankingData.status === 'success' && rankingData.ranking !== undefined) {
           pointsRanking.value = rankingData.ranking;
-          console.log('成功获取排名信息:', rankingData.ranking);
         } else {
-          console.warn('获取排名信息失败: 响应格式不正确', rankingData);
         }
       } else {
-        console.warn('获取排名信息失败: 响应不是对象', rankingData);
       }
     } catch (rankingError) {
-      console.warn('获取排名信息时发生错误:', rankingError);
     }
 
   } catch (error) {
-    console.error('获取积分信息或排名失败:', error);
   }
 }
 
@@ -389,7 +358,6 @@ const copyInvitationCode = () => {
     points: pointsInfo.value.invitation_points_per_user
   }) + `\n${mainWebsiteDomain}/?code=${pointsInfo.value.invitation_code}`;
 
-  console.log('生成邀请链接:', `${mainWebsiteDomain}/?code=${pointsInfo.value.invitation_code}`);
 
   navigator.clipboard.writeText(invitationText)
     .then(() => {
@@ -399,7 +367,6 @@ const copyInvitationCode = () => {
       }, 2000)
     })
     .catch(err => {
-      console.error('复制失败:', err)
     })
 }
 
@@ -420,7 +387,6 @@ const copyInvitationCode = () => {
 //         url: window.location.origin
 //       })
 //     } catch (error) {
-//       console.error('分享失败:', error)
 //     }
 //   } else {
 //     navigator.clipboard.writeText(shareText)
@@ -431,7 +397,6 @@ const copyInvitationCode = () => {
 //         }, 2000)
 //       })
 //       .catch(err => {
-//         console.error('复制失败:', err)
 //       })
 //   }
 // }

@@ -90,15 +90,6 @@ const { t: vueT, locale } = useI18n()
 // 当前语言
 const currentLang = ref(localStorage.getItem('language') || 'en-US')
 
-// 调试函数
-const debugTranslation = (key: string, params?: Record<string, any>) => {
-  console.log(`[Debug] 翻译键: ${key}`)
-  console.log(`[Debug] 当前语言: ${currentLang.value}`)
-  console.log(`[Debug] 增强翻译函数结果: ${t(key, params)}`)
-  console.log(`[Debug] 直接加载器结果: ${directT(key, params)}`)
-  console.log(`[Debug] Vue-i18n 结果: ${vueT(key, params)}`)
-}
-
 // 获取翻译文本，如果翻译失败则使用默认值
 const getTranslation = (key: string, defaultText: string, params?: Record<string, any>) => {
   const result = t(key, params)
@@ -107,9 +98,7 @@ const getTranslation = (key: string, defaultText: string, params?: Record<string
 
 // 监听语言变化
 watch(() => locale.value, (newLocale) => {
-  console.log(`[TokenNotFoundView] 语言已变更为: ${newLocale}`)
   currentLang.value = newLocale
-  debugTranslation('tokenNotFound.title', { symbol: 'BTC' })
 })
 
 // 监听 localStorage 中的语言变化
@@ -118,23 +107,17 @@ const setupLanguageChangeListener = () => {
     const newLang = (event as CustomEvent).detail?.language || localStorage.getItem('language') || 'en-US'
     console.log(`[TokenNotFoundView] 收到语言变更事件: ${newLang}`)
     currentLang.value = newLang
-    debugTranslation('tokenNotFound.title', { symbol: 'BTC' })
   })
 
   window.addEventListener('force-refresh-i18n', () => {
     const newLang = localStorage.getItem('language') || 'en-US'
     console.log(`[TokenNotFoundView] 收到强制刷新事件: ${newLang}`)
     currentLang.value = newLang
-    debugTranslation('tokenNotFound.title', { symbol: 'BTC' })
   })
 }
 
-// 在组件挂载时调试翻译并设置监听器
+// 在组件挂载时设置监听器
 onMounted(() => {
-  debugTranslation('tokenNotFound.title', { symbol: 'BTC' })
-  debugTranslation('tokenNotFound.description')
-  debugTranslation('tokenNotFound.refreshButton')
-
   // 设置语言变更监听器
   setupLanguageChangeListener()
 })

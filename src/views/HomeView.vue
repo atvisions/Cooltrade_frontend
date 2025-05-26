@@ -607,12 +607,10 @@ const getBaseSymbol = (symbol: string) => {
 // 加载分析数据
 const loadAnalysisData = async (forceRefresh: boolean = false) => {
   try {
-    // 重置所有状态
     loading.value = true
     error.value = null
     analysisLoading.value = true
 
-    // 确保在开始加载前清除任何现有数据
     if (!forceRefresh) {
       analysisData.value = null
     }
@@ -626,17 +624,14 @@ const loadAnalysisData = async (forceRefresh: boolean = false) => {
         const tab = tabs[0]
 
         if (!tab.url) {
-          console.error('无法获取当前页面URL')
           error.value = '无法获取当前页面URL'
           loading.value = false
           return
         }
 
         url = tab.url
-
         symbol = parseSymbolFromUrl(url)
       } catch (e) {
-        console.error('获取标签页信息失败:', e)
         error.value = '无法访问当前标签页，请确保已授予必要权限'
         loading.value = false
         return
@@ -646,19 +641,14 @@ const loadAnalysisData = async (forceRefresh: boolean = false) => {
       symbol = parseSymbolFromUrl(url)
     }
 
-    // 检查是否在交易所页面
     const isOnExchangePage = isExtensionEnvironment() ? url.includes('trade') || url.includes('exchange') : true;
 
     if (!symbol) {
       if (isOnExchangePage) {
-        symbol = 'BTC'; // 在交易所页面但无法识别交易对时，默认使用BTC
-        console.log('无法识别交易对，使用默认交易对: BTC');
-        // 避免不必要的错误提示，移除错误信息
+        symbol = 'BTC';
         error.value = null;
       } else {
-        // 不在交易所页面，显示默认交易对的数据，但不显示错误
         symbol = 'BTC';
-        console.log('不在交易所页面，使用默认交易对: BTC');
         error.value = null;
       }
     }
@@ -666,14 +656,10 @@ const loadAnalysisData = async (forceRefresh: boolean = false) => {
     currentSymbol.value = symbol
 
     try {
-      // 优先加载分析数据
       try {
-        // 获取技术分析数据
         const response = await getTechnicalAnalysis(symbol)
 
-        // 处理特殊的"not_found"状态
         if (typeof response === 'object' && response !== null) {
-          // 检查是否是API特殊响应格式 {"status": "not_found", "needs_refresh": true}
           if ('status' in response && (response as any).status === 'not_found') {
             isTokenNotFound.value = true
             loading.value = false
@@ -681,58 +667,28 @@ const loadAnalysisData = async (forceRefresh: boolean = false) => {
             return
           }
 
-          // 获取当前语言
           const currentLanguage = localStorage.getItem('language') || 'en-US'
-
-          // 确保数据格式化，填充可能缺失的字段，并应用翻译
           const formattedData = formatTechnicalAnalysisData(response, currentLanguage)
-
-          // 调试日志
-          console.log('原始API响应:', response);
-          console.log('格式化后的数据:', formattedData);
-          console.log('格式化前的价格数据:', {
-            current_price: response.current_price,
-            snapshot_price: response.snapshot_price
-          });
-          console.log('格式化后的价格数据:', {
-            current_price: formattedData.current_price,
-            snapshot_price: formattedData.snapshot_price
-          });
-
-          // 更新分析数据
           analysisData.value = formattedData
-
-
-
-          // 重置重试计数
           retryCount.value = 0
-          // 重置错误和未找到状态
           error.value = null
           isTokenNotFound.value = false
         } else {
-          console.error('API返回格式错误:', response)
           error.value = '服务器返回数据格式错误'
         }
       } catch (apiError: any) {
-        console.error('API请求错误:', apiError)
-
-        // 获取详细错误信息
         let errorMsg = '请求失败';
         if (apiError.message) {
           errorMsg = apiError.message;
         }
 
-        // 网络错误处理
         if (apiError.code === 'ERR_NETWORK' || apiError.message?.includes('Network Error')) {
           errorMsg = '网络连接错误，请检查网络连接后重试';
         }
-        // 超时错误
         else if (apiError.code === 'ECONNABORTED' || apiError.message?.includes('timeout')) {
           errorMsg = '请求超时，服务器响应时间过长';
         }
-        // 服务器错误
         else if (apiError.response?.status >= 500) {
-          console.log('服务器500错误，可能是代币未找到，显示TokenNotFoundView')
           isTokenNotFound.value = true
           error.value = null
           loading.value = false
@@ -740,11 +696,9 @@ const loadAnalysisData = async (forceRefresh: boolean = false) => {
           return
         }
 
-        // 检查错误响应中是否包含not_found信息
         if (apiError.response?.data && typeof apiError.response.data === 'object') {
           const errorData = apiError.response.data;
           if (errorData.status === 'not_found') {
-            console.log('错误响应中发现交易对未找到状态')
             isTokenNotFound.value = true
             error.value = null
             loading.value = false
@@ -753,33 +707,23 @@ const loadAnalysisData = async (forceRefresh: boolean = false) => {
           }
         }
 
-        // 处理404错误(代币未找到)，这也可能意味着数据库中没有该代币
         if (apiError.response?.status === 404) {
-          console.log('检测到404错误，认为是交易对未找到');
-
-          // 检查是否在交易所页面
           const isOnExchangePage = isExtensionEnvironment()
             ? (await chrome.tabs.query({ active: true, currentWindow: true }))[0]?.url?.includes('trade') ||
               (await chrome.tabs.query({ active: true, currentWindow: true }))[0]?.url?.includes('exchange')
             : true;
 
           if (isOnExchangePage) {
-            // 在交易所页面，显示交易对未找到视图
             isTokenNotFound.value = true;
-            error.value = null; // 清除错误，显示特殊的未找到视图
+            error.value = null;
           } else {
-            // 不在交易所页面，显示默认交易对的数据，但不显示错误
-            // 尝试获取默认交易对(BTC)的数据
             try {
-              console.log('不在交易所页面，尝试获取默认交易对(BTC)的数据');
               const defaultResponse = await getTechnicalAnalysis('BTC');
               const currentLanguage = localStorage.getItem('language') || 'en-US';
               analysisData.value = formatTechnicalAnalysisData(defaultResponse, currentLanguage);
               isTokenNotFound.value = false;
               error.value = null;
             } catch (defaultError) {
-              // 如果默认交易对也获取失败，显示交易对未找到视图
-              console.error('获取默认交易对数据失败:', defaultError);
               isTokenNotFound.value = true;
               error.value = null;
             }
@@ -788,63 +732,38 @@ const loadAnalysisData = async (forceRefresh: boolean = false) => {
         } else {
           isTokenNotFound.value = false;
           error.value = errorMsg;
-          console.error('设置错误信息:', error.value);
         }
       }
-
-    } catch (apiError: any) {
-      console.error('API请求错误:', apiError)
-      error.value = apiError.message || '加载分析数据失败'
+    } catch (e) {
+      if (!error.value && !isTokenNotFound.value) {
+        error.value = e instanceof Error ? e.message : '加载数据失败'
+      }
+    } finally {
+      loading.value = false
+      analysisLoading.value = false
     }
-
   } catch (e) {
-    console.error('整体加载过程错误:', e)
     if (!error.value && !isTokenNotFound.value) {
       error.value = e instanceof Error ? e.message : '加载数据失败'
     }
-  } finally {
-    // 整体加载状态结束
-    loading.value = false
-    analysisLoading.value = false
-
-
   }
 }
 
 // 监听语言变更事件，重新翻译报告数据
 const setupLanguageChangeListener = () => {
-  // 监听语言变更事件
   window.addEventListener('language-changed', async (event) => {
-    console.log('语言已变更，重新翻译报告数据')
-
-    // 获取新的语言
     const newLanguage = (event as CustomEvent).detail?.language || localStorage.getItem('language') || 'en-US'
 
-    // 当语言变更时，重新加载数据以获取对应语言的报告
     if (currentSymbol.value) {
-      console.log(`语言已变更为 ${newLanguage}，重新加载 ${currentSymbol.value} 的分析报告`)
-      // 重新加载数据，获取新语言的报告
       await loadAnalysisData(false)
-
-      // 强制重新渲染组件
       await nextTick()
-      console.log('语言变更后强制重新渲染组件完成');
     }
   })
 
-  // 监听强制刷新事件
   window.addEventListener('force-refresh-i18n', async () => {
-    console.log('收到强制刷新i18n事件，重新渲染组件');
-
-    // 如果有分析数据，重新格式化并应用新语言
     if (analysisData.value && currentSymbol.value) {
       const currentLanguage = localStorage.getItem('language') || 'en-US';
-      console.log(`强制刷新i18n，当前语言: ${currentLanguage}`);
-
-      // 重新加载数据，获取新语言的报告
       await loadAnalysisData(false);
-
-      // 强制重新渲染组件
       await nextTick();
     }
   })
@@ -963,19 +882,15 @@ const getIndicatorIconForImage = (trend?: string) => {
 // 强制刷新数据
 const forceRefreshData = async () => {
   try {
-    // 只做数据刷新，不再模拟进度条
     if (!currentSymbol.value) {
       error.value = '无法获取当前交易对信息'
       return
     }
-    // 重置错误和未找到状态
     error.value = null
     isTokenNotFound.value = false
     analysisLoading.value = true
 
-    // 强制刷新数据
     const refreshResponse = await getTechnicalAnalysis(currentSymbol.value)
-    // 等待1秒，确保后端数据已刷新
     await new Promise(resolve => setTimeout(resolve, 1000))
     const latestResponse = await getTechnicalAnalysis(currentSymbol.value)
     const dataToFormat = latestResponse || refreshResponse
@@ -986,7 +901,6 @@ const forceRefreshData = async () => {
     analysisLoading.value = false
     await nextTick()
   } catch (e) {
-    console.error('强制刷新数据失败:', e)
     error.value = e instanceof Error ? e.message : '刷新数据失败'
     analysisLoading.value = false
   }
@@ -994,16 +908,13 @@ const forceRefreshData = async () => {
 
 // 普通刷新数据
 const refreshData = async () => {
-  error.value = null // 清除之前的错误
-  isTokenNotFound.value = false // 重置代币未找到状态
+  error.value = null
+  isTokenNotFound.value = false
   analysisLoading.value = true
 
   try {
-    // 尝试使用普通请求获取数据
     const response = await getTechnicalAnalysis(currentSymbol.value)
-    console.log('普通刷新数据返回:', response)
 
-    // 检查响应状态，处理新的响应格式
     if (typeof response === 'object' && response !== null && 'status' in response) {
       const apiResponse = response as any;
       if (apiResponse.status === 'not_found' && apiResponse.needs_refresh === true) {
@@ -1013,34 +924,18 @@ const refreshData = async () => {
       }
     }
 
-    // 获取当前语言
     const currentLanguage = localStorage.getItem('language') || 'en-US'
-
-    // 确保数据格式化，填充可能缺失的字段，并应用翻译
     const formattedData = formatTechnicalAnalysisData(response, currentLanguage)
-
-    // 更新数据
     analysisData.value = formattedData
-
-    // 打印检查数据完整性
-    console.log('普通刷新后，格式化数据是否包含市场趋势分析:', !!formattedData.trend_analysis)
-    console.log('普通刷新后，格式化数据是否包含交易建议:', !!formattedData.trading_advice)
-    console.log('普通刷新后，格式化数据是否包含风险评估:', !!formattedData.risk_assessment)
-
-    // 标记分析数据加载完成
     analysisLoading.value = false
-
-    // 确保视图更新
     await nextTick()
 
   } catch (err: any) {
-    // 重置加载状态
     analysisLoading.value = false
 
-    // 检查是否是404错误（代币未找到）
     if (err.response?.status === 404) {
       isTokenNotFound.value = true
-      error.value = null // 清除一般错误，使用特殊的未找到视图
+      error.value = null
     } else {
       error.value = err.message || '刷新数据失败'
     }

@@ -49,22 +49,17 @@ let lastRequestTime = 0
 const validateToken = () => {
   const token = localStorage.getItem('token')
   if (!token) {
-    console.error('Token不存在')
     return false
   }
 
   // 检查token格式
   if (!token.startsWith('Token ') && !token.startsWith('Bearer ')) {
-    console.log('Token格式不正确，尝试修复格式')
-
     // 尝试修复token格式
     try {
       // 保存正确格式的token
       localStorage.setItem('token', `Token ${token}`)
-      console.log('Token格式已修复')
       return true
     } catch (e) {
-      console.error('修复Token格式失败:', e)
       return false
     }
   }
@@ -74,7 +69,6 @@ const validateToken = () => {
     const tokenValue = token.replace('Token ', '')
     // 放宽token长度检查，只确保不为空
     if (tokenValue.length < 5) {
-      console.error('Token长度异常')
       return false
     }
   }
@@ -105,7 +99,6 @@ const checkRateLimit = async (): Promise<void> => {
     const oldestRequest = requestQueue[0]
     const waitTime = 60000 - (now - oldestRequest.timestamp)
     if (waitTime > 0) {
-      console.log(`达到每分钟请求限制，等待${waitTime/1000}秒`)
       await new Promise(resolve => setTimeout(resolve, waitTime))
       await checkRateLimit()
       return
@@ -116,7 +109,6 @@ const checkRateLimit = async (): Promise<void> => {
   const timeSinceLastRequest = now - lastRequestTime
   if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
     const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest
-    console.log(`请求过于频繁，等待${waitTime/1000}秒`)
     await new Promise(resolve => setTimeout(resolve, waitTime))
   }
 
@@ -140,12 +132,10 @@ const retryRequest = async (config: any, retryCount: number = 0): Promise<any> =
     if (token) {
       // 确保令牌格式正确
       if (!token.startsWith('Token ') && !token.startsWith('Bearer ')) {
-        console.log('重试请求 - Token格式不正确，添加前缀')
         config.headers.Authorization = `Token ${token}`
       } else {
         config.headers.Authorization = token
       }
-      console.log('重试请求 - 使用认证令牌:', config.headers.Authorization)
     }
 
     // 添加缓存控制头
@@ -157,15 +147,6 @@ const retryRequest = async (config: any, retryCount: number = 0): Promise<any> =
       config.timeout = FORCE_REFRESH_TIMEOUT
     }
 
-    // 在扩展环境中使用代理请求
-    // let response;
-    // if (isExtension()) {
-    //   console.log('使用代理发送请求:', config.url)
-    //   response = await proxyRequest(config)
-    // } else {
-    //   response = await axios(config)
-    // }
-
     // 直接使用配置好的 axios 实例 (api)
     let response = await api(config);
 
@@ -173,13 +154,8 @@ const retryRequest = async (config: any, retryCount: number = 0): Promise<any> =
   } catch (error: any) {
     // 处理文件访问错误
     if (error.code === 'ERR_FILE_NOT_FOUND') {
-      console.error('文件访问错误:', error)
-      // 如果是扩展资源访问错误，尝试重新加载扩展
       if (isExtension() && error.config?.url?.includes(chrome.runtime.getURL(''))) {
-        console.log('尝试重新加载扩展资源...')
-        // 通知background script重新加载资源
         chrome.runtime.sendMessage({ type: 'RELOAD_RESOURCES' })
-        // 等待一段时间后重试
         await new Promise(resolve => setTimeout(resolve, 1000))
         return retryRequest(config, retryCount + 1)
       }
@@ -202,7 +178,6 @@ const retryRequest = async (config: any, retryCount: number = 0): Promise<any> =
       error.response?.status === 500
     )) {
       const delay = RETRY_DELAY * Math.pow(2, retryCount)
-      console.log(`请求失败，${delay/1000}秒后重试(${retryCount + 1}/${maxRetries})`)
       await new Promise(resolve => setTimeout(resolve, delay))
       return retryRequest(config, retryCount + 1)
     }
@@ -220,35 +195,18 @@ api.interceptors.request.use(
         const token = localStorage.getItem('token');
         if (token) {
           config.headers.Authorization = token;
-          console.log('请求拦截器添加认证令牌:', token);
-        } else {
-          console.warn('请求拦截器无法获取认证令牌');
         }
       } else if (config.headers.Authorization) {
-        console.log('请求已包含认证令牌:', config.headers.Authorization);
       }
 
       // 在扩展环境中使用代理请求
       if (isExtension()) {
-        console.log('使用代理发送请求:', config.url, '请求头:', config.headers);
         return proxyRequest(config);
       } else if (isDevelopment()) {
-        // 在开发环境中，如果不是扩展环境，提示用户需要使用扩展环境
-        console.warn('在开发环境中，请使用Chrome扩展进行API请求，以避免CORS问题');
       }
-
-      console.log('请求拦截器 - 完整配置:', {
-        url: config.url,
-        baseURL: config.baseURL,
-        method: config.method,
-        headers: config.headers,
-        data: config.data,
-        params: config.params
-      });
 
       // 只对非认证请求验证token
       if (!isAuthRequest(config.url) && !validateToken()) {
-        console.error('Token验证失败');
         return Promise.reject(new Error('Token验证失败'))
       }
 
@@ -260,32 +218,16 @@ api.interceptors.request.use(
         const token = localStorage.getItem('token')
         if (token) {
           // 确保令牌格式正确
-          if (!token.startsWith('Token ') && !token.startsWith('Bearer ')) {
-            console.log('请求拦截器 - Token格式不正确，添加前缀')
-            config.headers.Authorization = `Token ${token}`
-
-            // 同时更新localStorage中的token
-            try {
-              localStorage.setItem('token', `Token ${token}`)
-              console.log('请求拦截器 - Token格式已修复并保存到localStorage')
-            } catch (e) {
-              console.error('请求拦截器 - 修复Token格式失败:', e)
-            }
-          } else {
-            config.headers.Authorization = token
-          }
-          console.log('请求拦截器 - 已添加Token到请求头:', config.headers.Authorization);
+          config.headers.Authorization = `Token ${token}`
         }
       }
 
       return config
     } catch (error) {
-      console.error('请求拦截器错误:', error);
       return Promise.reject(error)
     }
   },
   (error) => {
-    console.error('请求拦截器错误:', error)
     return Promise.reject(error)
   }
 )
@@ -293,27 +235,17 @@ api.interceptors.request.use(
 // 响应拦截器
 api.interceptors.response.use(
   (response) => {
-    // 添加响应数据结构检查
-    console.log('API响应数据:', {
-      url: response.config.url,
-      status: response.status,
-      data: response.data
-    })
-
     // 检查数据结构
     if (!response.data || typeof response.data !== 'object') {
-      console.error('API响应数据格式错误:', response.data)
       return Promise.reject(new Error('数据格式错误'))
     }
 
     // 检查响应是否已经是标准格式
     if (response.data.status === 'success' || response.data.status === 'error') {
-      console.log('API响应已经是标准格式，直接返回')
       return response.data
     }
 
     // 如果不是标准格式，包装成标准格式
-    console.log('API响应不是标准格式，包装成标准格式')
     return {
       status: 'success',
       data: response.data
@@ -332,14 +264,12 @@ api.interceptors.response.use(
 
     // 处理网络错误
     if (error.code === 'ERR_NETWORK') {
-      console.error('网络连接错误:', error)
       if (!originalRequest._retry) {
         originalRequest._retry = true
         try {
           const response = await retryRequest(originalRequest)
           return response
         } catch (retryError) {
-          console.error('重试失败:', retryError)
           return Promise.reject(retryError)
         }
       }
@@ -352,7 +282,6 @@ api.interceptors.response.use(
         const response = await retryRequest(originalRequest)
         return response
       } catch (retryError) {
-        console.error('重试失败:', retryError)
         return Promise.reject(retryError)
       }
     }
@@ -362,23 +291,6 @@ api.interceptors.response.use(
       localStorage.removeItem('userInfo')
       window.location.href = '/login'
     }
-
-    // 详细的错误日志
-    console.error('Response Error:', {
-      status: error.response?.status,
-      data: error.response?.data,
-      headers: error.response?.headers,
-      code: error.code,
-      message: error.message,
-      config: {
-        url: error.config?.url,
-        method: error.config?.method,
-        headers: {
-          ...error.config?.headers,
-          Authorization: error.config?.headers?.Authorization ? 'Token ****' : undefined
-        }
-      }
-    })
 
     return Promise.reject(error)
   }
@@ -400,11 +312,6 @@ interface LoginResponse {
 export const auth = {
   sendCode: async (data: { email: string }) => {
     try {
-      console.log('Sending verification code request to:', `${getBaseUrl()}/auth/send-code/`);
-      console.log('Verification code data:', { email: data.email });
-
-      // 直接使用axios发送请求，而不是使用api实例
-      // 这样可以避免请求拦截器和代理机制可能引起的问题
       const url = `${getBaseUrl()}/auth/send-code/`;
       const response = await axios.post(url, {
         email: data.email.trim()
@@ -414,27 +321,13 @@ export const auth = {
         }
       });
 
-      console.log('Send code direct response:', response);
-
-      // 直接返回response.data，与老版本保持一致
       return response.data;
     } catch (error) {
-      console.error('Send code error:', error);
       throw error;
     }
   },
   register: async (data: { email: string; password: string; code: string; invitation_code: string }) => {
     try {
-      console.log('Sending registration request to:', `${getBaseUrl()}/auth/register/`);
-      console.log('Registration data:', {
-        email: data.email,
-        password: '***',
-        code: data.code,
-        invitation_code: data.invitation_code
-      });
-
-      // 直接使用axios发送请求，而不是使用api实例
-      // 这样可以避免请求拦截器和代理机制可能引起的问题
       const url = `${getBaseUrl()}/auth/register/`;
       const response = await axios.post(url, {
         email: data.email.trim(),
@@ -447,22 +340,13 @@ export const auth = {
         }
       });
 
-      console.log('Registration direct response:', response);
-
-      // 直接返回response.data，与老版本保持一致
       return response.data;
     } catch (error) {
-      console.error('Register error:', error);
       throw error;
     }
   },
   login: async (data: { email: string; password: string }): Promise<LoginResponse> => {
     try {
-      console.log('Sending login request to:', `${getBaseUrl()}/auth/login/`);
-      console.log('Login data:', { email: data.email, password: '***' });
-
-      // 直接使用axios发送请求，而不是使用api实例
-      // 这样可以避免请求拦截器和代理机制可能引起的问题
       const url = `${getBaseUrl()}/auth/login/`;
       const response = await axios.post(url, {
         email: data.email.trim(),
@@ -473,13 +357,8 @@ export const auth = {
         }
       });
 
-      console.log('Login direct response:', response);
-
-      // 直接返回response.data，与老版本保持一致
       return response.data;
     } catch (error) {
-      console.error('Login error:', error);
-      // 抛出错误，让调用者处理
       throw error;
     }
   },
@@ -490,7 +369,6 @@ export const auth = {
       });
       return response.data;
     } catch (error) {
-      console.error('Request password reset error:', error);
       throw error;
     }
   },
@@ -504,21 +382,11 @@ export const auth = {
       });
       return response.data;
     } catch (error) {
-      console.error('Reset password with code error:', error);
       throw error;
     }
   },
   changePassword: async (data: { current_password: string; new_password: string; confirm_password: string }) => {
     try {
-      console.log('Sending change password request to:', `${getBaseUrl()}/auth/change-password/`);
-      console.log('Change password data:', {
-        current_password: '***',
-        new_password: '***',
-        confirm_password: '***'
-      });
-
-      // 直接使用axios发送请求，而不是使用api实例
-      // 这样可以避免请求拦截器和代理机制可能引起的问题
       const url = `${getBaseUrl()}/auth/change-password/`;
 
       // 获取认证令牌
@@ -538,12 +406,8 @@ export const auth = {
         }
       });
 
-      console.log('Change password direct response:', response);
-
-      // 直接返回response.data，与老版本保持一致
       return response.data;
     } catch (error) {
-      console.error('Change password error:', error);
       throw error;
     }
   }
@@ -678,7 +542,6 @@ const getCurrentLanguage = (): string => {
         return user.language
       }
     } catch (e) {
-      console.error('解析用户信息失败:', e)
     }
   }
 
@@ -709,16 +572,12 @@ export const getTechnicalAnalysis = async (
     const currentLanguage = getCurrentLanguage()
     params.language = currentLanguage
 
-    // 记录当前使用的语言
-    console.log(`使用语言参数: ${currentLanguage} 获取 ${fullSymbol} 的分析报告`)
-
     // 使用基础 URL
     const url = `${getBaseUrl()}${path}`;
 
     // 发送请求
     // 获取认证令牌并确保格式正确
     const token = localStorage.getItem('token');
-    console.log('获取技术分析数据使用的令牌:', token);
 
     // 确保令牌格式正确
     const authHeader = token ? (token.startsWith('Token ') ? token : `Token ${token}`) : '';
@@ -798,15 +657,11 @@ export const getLatestTechnicalAnalysis = async (
 
     // 检查是否有相同的请求正在进行中
     if (pendingRequests[requestId]) {
-      console.log(`请求 ${requestId} 已在进行中，跳过重复请求`);
       throw new Error('请求已在进行中，请稍后再试');
     }
 
     // 标记请求为进行中
     pendingRequests[requestId] = true;
-
-    // 记录当前使用的语言
-    console.log(`使用语言参数: ${requestLanguage} 获取 ${fullSymbol} 的最新分析报告`)
 
     // 使用基础 URL
     const url = `${getBaseUrl()}${requestPath}`;
@@ -814,7 +669,6 @@ export const getLatestTechnicalAnalysis = async (
     // 发送请求
     // 获取认证令牌并确保格式正确
     const token = localStorage.getItem('token');
-    console.log('获取最新技术分析报告使用的令牌:', token);
 
     // 确保令牌格式正确
     const authHeader = token ? (token.startsWith('Token ') ? token : `Token ${token}`) : '';
@@ -852,8 +706,6 @@ export const getLatestTechnicalAnalysis = async (
 
     return result;
   } catch (error: any) {
-    // 错误处理
-
     // 清除请求标记
     if (requestPath && requestLanguage) {
       pendingRequests[`${requestPath}?language=${requestLanguage}`] = false;

@@ -1,5 +1,5 @@
 // 注入到交易所页面的脚本
-console.log('K线军师插件已加载');
+// console.log('K线军师插件已加载');
 
 // 检查当前页面是否是交易所的交易页面
 function isExchangeTradingPage() {
@@ -30,7 +30,7 @@ async function initializePlugin() {
     });
 
   } catch (error) {
-    console.error('插件初始化失败:', error);
+    // console.error('插件初始化失败:', error);
   }
 }
 

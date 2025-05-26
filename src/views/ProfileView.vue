@@ -172,7 +172,6 @@ const currentLanguage = ref(locale.value)
 
 // 监听语言变化
 watch(locale, (newLocale) => {
-  console.log(`[ProfileView] 检测到语言变化: ${newLocale}`)
   currentLanguage.value = newLocale
 })
 
@@ -180,14 +179,12 @@ watch(locale, (newLocale) => {
 const getCurrentLanguageName = (): string => {
   // 使用 currentLanguage.value 而不是 locale.value
   const langCode = currentLanguage.value
-  console.log(`[ProfileView] 获取语言名称，当前语言代码: ${langCode}`)
   const lang = languages.find(l => l.code === langCode)
   return lang ? lang.name : 'Unknown'
 }
 
 // 支持的语言列表
 const languages = [
-  { code: 'zh-CN', name: '简体中文' },
   { code: 'en-US', name: 'English' },
   { code: 'ja-JP', name: '日本語' },
   { code: 'ko-KR', name: '한국어' }
@@ -206,11 +203,9 @@ const getLangFlag = (langCode: string): string => {
 
 // 选择语言并关闭模态框
 const selectLanguage = (lang: string) => {
-  console.log(`[ProfileView] 选择语言: ${lang}`);
 
   // 检查是否与当前语言相同，如果相同则只关闭模态框
   if (currentLanguage.value === lang) {
-    console.log(`[ProfileView] 语言未变化，保持为: ${lang}`);
     showLanguageModal.value = false;
     return;
   }
@@ -234,7 +229,6 @@ const selectLanguage = (lang: string) => {
   // 移除以下代码以避免多次触发语言变更事件
   /*
   setTimeout(() => {
-    console.log(`[ProfileView] 强制刷新组件，语言: ${lang}`);
 
     // 强制重新渲染当前组件
     const app = document.getElementById('app');
@@ -267,7 +261,6 @@ const formatDate = (dateString: string) => {
   else if (currentLang === 'ja-JP') locale = 'ja-JP';
   else if (currentLang === 'ko-KR') locale = 'ko-KR';
 
-  console.log(`[ProfileView] 格式化日期，使用区域设置: ${locale}`);
 
   return date.toLocaleDateString(locale, {
     year: 'numeric',
@@ -282,7 +275,6 @@ const fetchUserInfo = async () => {
   if (!isLoggedIn.value) return;
 
   try {
-    console.log('[ProfileView] 开始获取用户信息');
 
     // 先尝试从本地存储获取用户信息
     const savedUserInfo = localStorage.getItem('userInfo');
@@ -290,16 +282,13 @@ const fetchUserInfo = async () => {
       try {
         const parsedInfo = JSON.parse(savedUserInfo);
         userInfo.value = parsedInfo;
-        console.log('[ProfileView] 从本地存储加载用户信息:', parsedInfo);
       } catch (e) {
-        console.error('[ProfileView] 解析本地用户信息失败:', e);
       }
     }
 
     // 检查是否在扩展环境中
     const isExtension = window.location.protocol === 'chrome-extension:';
     if (isExtension) {
-      console.log('[ProfileView] 在扩展环境中，使用本地存储的用户信息');
       return;
     }
 
@@ -309,7 +298,6 @@ const fetchUserInfo = async () => {
       ? '/api/auth/profile/'
       : `${api.defaults.baseURL}/auth/profile/`;
 
-    console.log('[ProfileView] 从服务器获取用户信息:', url);
 
     const response = await axios.get(url, {
       headers: {
@@ -318,17 +306,14 @@ const fetchUserInfo = async () => {
       }
     });
 
-    console.log('[ProfileView] 服务器响应:', response);
 
     const data = response.data;
     if (data?.status === 'success' && data?.data) {
       userInfo.value = data.data;
       // 更新本地存储
       localStorage.setItem('userInfo', JSON.stringify(data.data));
-      console.log('[ProfileView] 更新用户信息:', data.data);
     }
   } catch (error) {
-    console.error('[ProfileView] 获取用户信息失败:', error);
     // 获取用户信息失败，使用本地存储的信息
   }
 }
@@ -355,14 +340,12 @@ const updateUserLanguage = async (lang: string) => {
         }
       );
     } else {
-      console.log('在扩展环境中，跳过 API 请求，只更新本地存储');
     }
 
     // 更新本地用户信息
     userInfo.value.language = lang;
     localStorage.setItem('userInfo', JSON.stringify(userInfo.value));
   } catch (error) {
-    console.error('更新用户语言设置失败:', error);
 
     // 即使 API 请求失败，也更新本地存储
     userInfo.value.language = lang;
@@ -391,11 +374,9 @@ const setupLanguageChangeListener = () => {
     // 防止短时间内重复处理相同的语言
     const now = Date.now();
     if (newLang === lastProcessedLang && now - lastProcessedTime < 1000) {
-      console.log(`[ProfileView] 忽略重复的语言变更事件: ${newLang}`);
       return;
     }
 
-    console.log(`[ProfileView] 收到语言变更事件: ${newLang}`);
     currentLanguage.value = newLang;
     lastProcessedLang = newLang;
     lastProcessedTime = now;
@@ -408,11 +389,9 @@ const setupLanguageChangeListener = () => {
     // 防止短时间内重复处理相同的语言
     const now = Date.now();
     if (newLang === lastProcessedLang && now - lastProcessedTime < 1000) {
-      console.log(`[ProfileView] 忽略重复的强制刷新事件: ${newLang}`);
       return;
     }
 
-    console.log(`[ProfileView] 收到强制刷新事件: ${newLang}`);
     currentLanguage.value = newLang;
     lastProcessedLang = newLang;
     lastProcessedTime = now;
@@ -430,16 +409,13 @@ onMounted(async () => {
   if (isLoggedIn.value && userInfo.value.language) {
     // 只有当用户语言与当前语言不同时才设置
     if (userInfo.value.language !== storedLang) {
-      console.log(`[ProfileView] 使用用户语言设置: ${userInfo.value.language}，当前语言: ${storedLang}`);
       setLanguage(userInfo.value.language);
     } else {
-      console.log(`[ProfileView] 用户语言与当前语言一致: ${storedLang}`);
       // 确保当前组件的语言与存储的语言一致
       currentLanguage.value = storedLang;
     }
   } else {
     // 确保当前组件的语言与存储的语言一致
-    console.log(`[ProfileView] 使用存储的语言: ${storedLang}`);
     currentLanguage.value = storedLang;
   }
 

@@ -112,13 +112,15 @@ export function formatTechnicalAnalysisData(
     // 处理技术分析数据
     if (isTechnicalAnalysisData(response)) {
       try {
-        // 添加调试信息
-        console.log('格式化技术分析数据:', response);
-        console.log('价格字段检查:', {
-          current_price: response.current_price,
-          snapshot_price: response.snapshot_price,
-          price: (response as any).price
-        });
+        // 只在调试模式下添加调试信息
+        if (process.env.NODE_ENV === 'development' || localStorage.getItem('i18n_debug') === 'true') {
+          console.log('格式化技术分析数据:', response);
+          console.log('价格字段检查:', {
+            current_price: response.current_price,
+            snapshot_price: response.snapshot_price,
+            price: (response as any).price
+          });
+        }
 
         // 创建格式化后的数据对象，添加默认值和类型检查
         const price = typeof (response as any).price === 'number' ? (response as any).price : 0;
@@ -146,7 +148,8 @@ export function formatTechnicalAnalysisData(
             score: typeof response.trading_advice?.risk_score === 'number' ? response.trading_advice.risk_score : 50,
             details: Array.isArray(response.trading_advice?.risk_details) ? response.trading_advice.risk_details : []
           },
-          last_update_time: typeof response.last_update_time === 'string' ? response.last_update_time : new Date().toISOString()
+          last_update_time: typeof response.last_update_time === 'string' ? response.last_update_time :
+                        (typeof response.timestamp === 'string' ? response.timestamp : new Date().toISOString())
         }
 
         // 直接返回格式化后的数据

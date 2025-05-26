@@ -39,14 +39,10 @@ export const proxyRequest = async (config: AxiosRequestConfig): Promise<any> => 
     if (!updatedHeaders.Authorization) {
       const token = localStorage.getItem('token');
       if (token) {
-        console.log('代理请求添加认证令牌');
         updatedHeaders = { ...updatedHeaders, Authorization: token };
-        console.log('使用认证令牌:', token);
       } else {
-        console.warn('代理请求无法获取认证令牌');
       }
     } else {
-      console.log('代理请求已包含认证令牌:', updatedHeaders.Authorization);
     }
 
     // 发送代理请求
@@ -68,13 +64,11 @@ export const proxyRequest = async (config: AxiosRequestConfig): Promise<any> => 
       }
 
       if (chrome.runtime.lastError) {
-        console.error('代理请求错误:', chrome.runtime.lastError);
         reject(new Error(chrome.runtime.lastError.message))
         return
       }
 
       if (!response || !response.success) {
-        console.error('代理请求失败:', response);
         const error = new Error(response?.error || '请求失败')
         if (response?.errorDetail) {
           // @ts-ignore
@@ -84,7 +78,6 @@ export const proxyRequest = async (config: AxiosRequestConfig): Promise<any> => 
         return
       }
 
-      console.log('代理请求成功:', response);
 
       try {
         // 直接返回一个简化的响应对象，只包含必要的数据
@@ -97,7 +90,6 @@ export const proxyRequest = async (config: AxiosRequestConfig): Promise<any> => 
           config: {}    // 使用空对象避免undefined
         })
       } catch (error) {
-        console.error('构造响应对象失败:', error);
         // 如果出错，返回一个最小化的响应对象
         resolve({
           data: response.data,

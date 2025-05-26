@@ -222,7 +222,6 @@ const restoreFormData = () => {
       formData.value.email = email || ''
       formData.value.code = code || ''
     } catch (e) {
-      console.error('恢复表单数据失败:', e)
     }
   }
 }
@@ -271,12 +270,10 @@ const handleSendCode = async () => {
 
   isSendingCode.value = true
   try {
-    console.log('发送验证码请求:', formData.value.email)
     const response = await auth.requestPasswordReset({
       email: formData.value.email.trim()
     })
 
-    console.log('验证码请求响应:', response)
 
     if (response.status === 'success') {
       startCountdown()
@@ -285,18 +282,15 @@ const handleSendCode = async () => {
       generalError.value = response.message || t('errors.send_code_failed')
     }
   } catch (error: any) {
-    console.error('发送验证码失败:', error)
 
     // 详细记录错误信息
     if (error.response) {
-      console.error('错误响应详情:', {
         status: error.response.status,
         data: error.response.data,
         headers: error.response.headers
       })
 
       // 显示服务器返回的详细错误信息
-      console.log('服务器错误详情:', JSON.stringify(error.response.data, null, 2))
 
       // 如果服务器返回了错误消息，直接显示给用户
       if (error.response.data && typeof error.response.data === 'object') {
@@ -392,7 +386,6 @@ const handleResetPassword = async () => {
 
   loading.value = true
   try {
-    console.log('重置密码请求:', {
       email: formData.value.email,
       code: formData.value.code,
       new_password: '******',
@@ -406,7 +399,6 @@ const handleResetPassword = async () => {
       confirm_password: formData.value.confirm_password.trim()
     })
 
-    console.log('重置密码响应:', response)
 
     if (response.status === 'success') {
       // 清除保存的表单数据
@@ -417,18 +409,15 @@ const handleResetPassword = async () => {
       generalError.value = response.message || t('errors.password_change_failed')
     }
   } catch (error: any) {
-    console.error('重置密码失败:', error)
 
     // 详细记录错误信息
     if (error.response) {
-      console.error('错误响应详情:', {
         status: error.response.status,
         data: error.response.data,
         headers: error.response.headers
       })
 
       // 显示服务器返回的详细错误信息
-      console.log('服务器错误详情:', JSON.stringify(error.response.data, null, 2))
 
       // 如果服务器返回了错误消息，直接显示给用户
       if (error.response.data && typeof error.response.data === 'object') {

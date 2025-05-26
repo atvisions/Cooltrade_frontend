@@ -80,16 +80,6 @@ import { auth } from '@/api'
 // 使用增强的 i18n
 const { t } = useEnhancedI18n()
 
-// 测试翻译是否正常工作
-onMounted(() => {
-  try {
-    const testTranslation = t('auth.login')
-    console.log('Test translation:', testTranslation)
-  } catch (e) {
-    console.error('Error using i18n:', e)
-  }
-})
-
 const router = useRouter()
 const route = useRoute()
 
@@ -113,63 +103,33 @@ const handleLogin = async () => {
 
   loading.value = true
   try {
-    console.log('Attempting login with:', { email: formData.value.email, password: '***' });
-
     const response = await auth.login({
       email: formData.value.email,
       password: formData.value.password
     });
 
-    console.log('Login response:', response);
-
-    // 检查响应格式
     if (response.status === 'success' && response.data) {
-      // 保存 token
       const token = response.data.token;
       const userData = response.data.user;
 
       if (token) {
-        // 添加Token前缀
         localStorage.setItem('token', `Token ${token}`);
 
-        // 保存用户信息
         if (userData) {
           localStorage.setItem('userInfo', JSON.stringify(userData));
         }
 
-        // 输出调试信息
-        console.log('已保存token:', localStorage.getItem('token'));
-        console.log('已保存用户信息:', localStorage.getItem('userInfo'));
-
-        // 跳转到重定向页面或首页
         const redirectPath = route.query.redirect as string || '/';
         router.push(redirectPath);
       } else {
-        console.error('Token未找到', response);
         error.value = t('errors.login_failed_no_token');
       }
     } else {
-      console.error('登录响应格式错误', response);
       error.value = response.message || t('errors.login_failed_server_error');
     }
   } catch (err: any) {
-    console.error('登录失败:', err);
-
-    // 详细记录错误信息
-    if (err.response) {
-      console.error('错误响应详情:', {
-        status: err.response.status,
-        data: err.response.data,
-        headers: err.response.headers
-      });
-
-      // 显示服务器返回的详细错误信息
-      console.log('服务器错误详情:', JSON.stringify(err.response.data, null, 2));
-    }
-
     if (err.response?.data?.message) {
       if (typeof err.response.data.message === 'object') {
-        // 如果错误消息是对象，尝试提取有用的信息
         const messages = Object.values(err.response.data.message).flat();
         if (messages.length > 0) {
           error.value = messages[0] as string;
